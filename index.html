@@ -96,7 +96,6 @@
 </head>
 <body>
 <div class="site-wrapper" id="top">
-
   <header>
     <a class="logo" href="#top">CR<span>Earnings</span></a>
     <nav>
@@ -137,7 +136,7 @@
     <div id="emptyState" style="display:none;text-align:center;padding:3rem;color:var(--cr-muted);">
       <div style="font-size:3rem;">🪂</div>
       <div style="font-family:'Orbitron',monospace;margin-top:1rem;">No airdrops yet.</div>
-      <div style="font-size:.85rem;margin-top:.5rem;">Check back soon for new opportunities!</div>
+      <div style="font-size:.85rem;margin-top:.5rem;">Check back soon!</div>
     </div>
   </main>
 
@@ -184,9 +183,6 @@
 </div>
 
 <script>
-// ══════ GIST ID – replaced by admin setup "Download Files" step ══════
-const SITE_GIST_ID = "d22d19c7957348ec27f14f57eec744b9";
-
 // ══════ THEME ══════
 let currentTheme=localStorage.getItem('cr_theme')||'system';
 function setTheme(t){currentTheme=t;localStorage.setItem('cr_theme',t);applyTheme();document.querySelectorAll('.theme-btn').forEach(b=>b.classList.remove('active'));document.getElementById('btn-'+t).classList.add('active');}
@@ -195,12 +191,29 @@ window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change',appl
 setTheme(currentTheme);
 
 // ══════ DATA ══════
+// Gist ID is fetched from site-config.json which lives in the repo.
+// This file is written automatically by admin.html during setup.
+// ALL visitors (any browser, any device) can read it because it's a public repo file.
 let allArticles=[],allAds={left:[],right:[],bottom:[]},currentPage=1;
 const PER_PAGE=10;
 
+async function getGistId(){
+  // Try site-config.json first (the correct way, works for everyone)
+  try{
+    const r=await fetch('site-config.json?t='+Date.now(),{cache:'no-store'});
+    if(r.ok){const d=await r.json();if(d&&d.gistId)return d.gistId;}
+  }catch(e){}
+  // Fallback: localStorage (only works on admin's own browser, kept for compatibility)
+  try{
+    const c=JSON.parse(localStorage.getItem('cr_gist_config')||'null');
+    if(c&&c.gistId)return c.gistId;
+  }catch(e){}
+  return null;
+}
+
 async function loadData(){
   const loadMsg=document.getElementById('loadingMsg');
-  const gistId=(typeof SITE_GIST_ID!=='undefined'&&SITE_GIST_ID&&SITE_GIST_ID!=='d22d19c7957348ec27f14f57eec744b9')?SITE_GIST_ID:null;
+  const gistId=await getGistId();
   if(!gistId){
     loadMsg.innerHTML='<span style="color:var(--cr-muted);font-family:Orbitron,monospace;font-size:.8rem">⚙️ Site not configured yet.</span>';
     return;
@@ -217,11 +230,12 @@ async function loadData(){
     renderArticles();
     renderAds();
   }catch(e){
-    loadMsg.innerHTML='<span style="color:var(--cr-red);font-family:Orbitron,monospace;font-size:.8rem">⚠️ Failed to load data. Please try refreshing.</span>';
+    loadMsg.innerHTML='<span style="color:var(--cr-red);font-family:Orbitron,monospace;font-size:.8rem">⚠️ Failed to load. Please refresh.</span>';
     console.error(e);
   }
 }
 
+// ══════ ARTICLES ══════
 function renderArticles(){
   const now=new Date();
   const visible=allArticles
@@ -249,6 +263,7 @@ function renderArticles(){
 }
 function goPage(p){currentPage=p;renderArticles();document.getElementById('articles').scrollIntoView({behavior:'smooth'});}
 
+// ══════ POPUP ══════
 function openPopup(id){
   const item=allArticles.find(a=>a.id===id);if(!item)return;
   const imgHtml=item.image?`<img class="popup-img" src="${esc(item.image)}" onerror="this.outerHTML='<div class=popup-img-placeholder>🪂</div>'">`:'<div class="popup-img-placeholder">🪂</div>';
@@ -262,13 +277,13 @@ function closePopup(){document.getElementById('popupOverlay').classList.remove('
 function closePopupIfOutside(e){if(e.target===document.getElementById('popupOverlay'))closePopup();}
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closePopup();});
 
+// ══════ ADS ══════
 function renderAds(){renderSide('adLeftSlot',allAds.left||[]);renderSide('adRightSlot',allAds.right||[]);renderBottom(allAds.bottom||[]);}
 function renderSide(id,list){
   const s=document.getElementById(id);
   if(!list.length){s.innerHTML='<div class="ad-placeholder">📢<br/>Ad Space<br/>Available</div>';return;}
   s.innerHTML=list.map((a,i)=>`<div class="ad-item${i===0?' active':''}">${a.image?`<img src="${esc(a.image)}" alt="ad"/>`:''}${a.title?`<a href="${esc(a.link||'#')}" target="_blank">${esc(a.title)}</a>`:''}</div>`).join('');
-  let idx=0;
-  setInterval(()=>{const items=s.querySelectorAll('.ad-item');if(!items.length)return;items[idx].classList.remove('active');idx=(idx+1)%items.length;items[idx].classList.add('active');},10000);
+  let idx=0;setInterval(()=>{const items=s.querySelectorAll('.ad-item');if(!items.length)return;items[idx].classList.remove('active');idx=(idx+1)%items.length;items[idx].classList.add('active');},10000);
 }
 function renderBottom(list){
   const c=document.getElementById('bottomAdsContainer'),p=document.getElementById('bottomAdPlaceholder');
@@ -277,6 +292,7 @@ function renderBottom(list){
   c.innerHTML=list.slice(0,4).map(a=>`<a class="bottom-ad-item" href="${esc(a.link||'#')}" target="_blank">${a.image?`<img src="${esc(a.image)}" alt="ad"/>`:''}${a.title?`<div class="bottom-ad-text"><strong>${esc(a.title)}</strong><small>${esc(a.subtitle||'Sponsored')}</small></div>`:''}</a>`).join('');
 }
 
+// ══════ UTILS ══════
 function esc(s){if(!s)return'';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
 function fmtDate(d){if(!d)return'';return new Date(d).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});}
 function ytId(v){if(!v)return null;const m=v.match(/(?:v=|youtu\.be\/|embed\/)([a-zA-Z0-9_-]{11})/);return m?m[1]:(v.length===11?v:null);}
