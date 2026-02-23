@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CR Earnings – Crypto Airdrop Alerts</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Exo+2:wght@300;400;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root{--cr-red:#ff0000;--cr-dark:#0a0a0a;--cr-card:#111111;--cr-border:#2a2a2a;--cr-text:#f0f0f0;--cr-muted:#888888;--cr-accent:#ff3333;--cr-glow:rgba(255,0,0,0.3);}
+    .light-mode{--cr-dark:#f5f5f5;--cr-card:#ffffff;--cr-border:#e0e0e0;--cr-text:#111111;--cr-muted:#555555;--cr-glow:rgba(255,0,0,0.15);}
+    *{box-sizing:border-box;margin:0;padding:0;}
+    html{scroll-behavior:smooth;}
+    body{font-family:'Exo 2',sans-serif;background-color:var(--cr-dark);color:var(--cr-text);transition:background-color .3s,color .3s;min-height:100vh;}
+    .site-wrapper{display:grid;grid-template-columns:160px 1fr 160px;grid-template-rows:auto 1fr auto;min-height:100vh;}
+    @media(max-width:900px){.site-wrapper{grid-template-columns:1fr;}.ad-left,.ad-right{display:none;}}
+    header{grid-column:1/-1;background:var(--cr-card);border-bottom:2px solid var(--cr-red);box-shadow:0 0 20px var(--cr-glow);position:sticky;top:0;z-index:100;padding:0 1rem;display:flex;align-items:center;justify-content:space-between;height:64px;}
+    .logo{font-family:'Orbitron',monospace;font-weight:900;font-size:1.4rem;color:var(--cr-red);text-shadow:0 0 10px var(--cr-glow);text-decoration:none;letter-spacing:2px;}
+    .logo span{color:var(--cr-text);}
+    nav{display:flex;gap:1.5rem;align-items:center;}
+    nav a{font-family:'Orbitron',monospace;font-size:.75rem;font-weight:700;letter-spacing:1px;color:var(--cr-muted);text-decoration:none;text-transform:uppercase;transition:color .2s;}
+    nav a:hover{color:var(--cr-red);text-shadow:0 0 8px var(--cr-glow);}
+    .header-right{display:flex;gap:.5rem;align-items:center;}
+    .theme-btn{background:var(--cr-border);border:1px solid var(--cr-border);color:var(--cr-text);cursor:pointer;border-radius:6px;padding:4px 8px;font-size:.7rem;font-family:'Exo 2',sans-serif;transition:all .2s;}
+    .theme-btn:hover,.theme-btn.active{background:var(--cr-red);border-color:var(--cr-red);color:#fff;}
+    .ad-left,.ad-right{background:var(--cr-card);border-right:1px solid var(--cr-border);position:sticky;top:64px;height:calc(100vh - 64px);overflow:hidden;display:flex;flex-direction:column;}
+    .ad-right{border-right:none;border-left:1px solid var(--cr-border);}
+    .ad-slot{position:relative;width:100%;height:100%;overflow:hidden;}
+    .ad-item{position:absolute;top:0;left:0;right:0;bottom:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:12px;opacity:0;transition:opacity .6s ease;text-align:center;}
+    .ad-item.active{opacity:1;}
+    .ad-item img{width:100%;height:auto;border-radius:8px;margin-bottom:8px;object-fit:cover;}
+    .ad-item a{font-size:.7rem;color:var(--cr-red);text-decoration:none;word-break:break-all;}
+    .ad-label{font-family:'Orbitron',monospace;font-size:.55rem;color:var(--cr-muted);letter-spacing:2px;text-transform:uppercase;padding:6px;border-bottom:1px solid var(--cr-border);text-align:center;}
+    .ad-placeholder{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;color:var(--cr-muted);font-size:.7rem;text-align:center;padding:12px;opacity:.5;}
+    .ad-bottom{grid-column:1/-1;position:fixed;bottom:0;left:0;right:0;height:70px;background:var(--cr-card);border-top:2px solid var(--cr-red);z-index:100;display:flex;align-items:center;justify-content:center;gap:1rem;padding:0 1rem;overflow:hidden;}
+    .bottom-ad-item{display:flex;align-items:center;gap:8px;flex:1;max-width:300px;text-decoration:none;}
+    .bottom-ad-item img{height:50px;width:50px;object-fit:cover;border-radius:6px;border:1px solid var(--cr-border);}
+    .bottom-ad-text{font-size:.75rem;color:var(--cr-text);}
+    .bottom-ad-text small{display:block;color:var(--cr-muted);font-size:.65rem;}
+    .bottom-ad-placeholder{color:var(--cr-muted);font-size:.75rem;opacity:.5;font-family:'Orbitron',monospace;letter-spacing:2px;}
+    main{padding:2rem 1.5rem 90px;min-width:0;}
+    .hero{text-align:center;padding:4rem 1rem 3rem;position:relative;}
+    .hero::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at center,var(--cr-glow) 0%,transparent 70%);pointer-events:none;}
+    .hero-badge{display:inline-block;background:rgba(255,0,0,.1);border:1px solid var(--cr-red);color:var(--cr-red);font-family:'Orbitron',monospace;font-size:.65rem;letter-spacing:3px;padding:4px 16px;border-radius:20px;margin-bottom:1.5rem;text-transform:uppercase;}
+    .hero h1{font-family:'Orbitron',monospace;font-size:clamp(2rem,5vw,3.5rem);font-weight:900;line-height:1.1;margin-bottom:1rem;}
+    .hero h1 span{color:var(--cr-red);text-shadow:0 0 20px var(--cr-glow);}
+    .hero p{font-size:1rem;color:var(--cr-muted);max-width:500px;margin:0 auto 2rem;}
+    .section-title{font-family:'Orbitron',monospace;font-size:1.1rem;font-weight:700;color:var(--cr-text);letter-spacing:2px;text-transform:uppercase;margin-bottom:1.5rem;display:flex;align-items:center;gap:12px;}
+    .section-title::before{content:'';display:block;width:4px;height:24px;background:var(--cr-red);box-shadow:0 0 8px var(--cr-glow);border-radius:2px;}
+    .cards-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:1.25rem;}
+    .airdrop-card{background:var(--cr-card);border:1px solid var(--cr-border);border-radius:12px;overflow:hidden;cursor:pointer;transition:all .25s;position:relative;}
+    .airdrop-card:hover{border-color:var(--cr-red);box-shadow:0 0 20px var(--cr-glow);transform:translateY(-4px);}
+    .airdrop-card img{width:100%;height:140px;object-fit:cover;display:block;}
+    .card-img-placeholder{width:100%;height:140px;background:linear-gradient(135deg,#1a0000,#2a0000);display:flex;align-items:center;justify-content:center;font-size:2.5rem;}
+    .card-body{padding:.75rem 1rem 1rem;}
+    .card-tag{font-family:'Orbitron',monospace;font-size:.6rem;letter-spacing:1.5px;color:var(--cr-red);text-transform:uppercase;margin-bottom:4px;}
+    .card-title{font-family:'Orbitron',monospace;font-size:.82rem;font-weight:700;line-height:1.35;color:var(--cr-text);}
+    .card-date{font-size:.68rem;color:var(--cr-muted);margin-top:6px;}
+    .card-new-badge{position:absolute;top:8px;right:8px;background:var(--cr-red);color:#fff;font-family:'Orbitron',monospace;font-size:.55rem;letter-spacing:1px;padding:2px 8px;border-radius:10px;text-transform:uppercase;}
+    .pagination{display:flex;gap:.5rem;justify-content:center;margin-top:2rem;align-items:center;}
+    .pagination button{background:var(--cr-card);border:1px solid var(--cr-border);color:var(--cr-text);font-family:'Orbitron',monospace;font-size:.7rem;padding:8px 16px;border-radius:6px;cursor:pointer;transition:all .2s;}
+    .pagination button:hover,.pagination button.active{background:var(--cr-red);border-color:var(--cr-red);color:#fff;}
+    .pagination button:disabled{opacity:.3;cursor:not-allowed;}
+    .page-info{font-size:.75rem;color:var(--cr-muted);font-family:'Orbitron',monospace;}
+    .popup-overlay{position:fixed;inset:0;background:rgba(0,0,0,.85);backdrop-filter:blur(4px);z-index:200;display:flex;align-items:center;justify-content:center;padding:1rem;opacity:0;pointer-events:none;transition:opacity .25s;}
+    .popup-overlay.open{opacity:1;pointer-events:all;}
+    .popup-box{background:var(--cr-card);border:1px solid var(--cr-red);border-radius:16px;width:100%;max-width:680px;max-height:90vh;overflow-y:auto;position:relative;box-shadow:0 0 40px var(--cr-glow);transform:scale(.92);transition:transform .25s;}
+    .popup-overlay.open .popup-box{transform:scale(1);}
+    .popup-img{width:100%;height:240px;object-fit:cover;border-radius:16px 16px 0 0;}
+    .popup-img-placeholder{width:100%;height:180px;background:linear-gradient(135deg,#1a0000,#2a0000);display:flex;align-items:center;justify-content:center;font-size:4rem;border-radius:16px 16px 0 0;}
+    .popup-content{padding:1.5rem;}
+    .popup-title{font-family:'Orbitron',monospace;font-size:1.2rem;font-weight:900;color:var(--cr-text);margin-bottom:.5rem;}
+    .popup-meta{font-size:.75rem;color:var(--cr-muted);margin-bottom:1rem;}
+    .popup-desc{font-size:.9rem;line-height:1.7;color:var(--cr-text);white-space:pre-wrap;}
+    .popup-close{position:absolute;top:12px;right:12px;background:rgba(0,0,0,.6);border:1px solid var(--cr-border);color:#fff;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:1rem;display:flex;align-items:center;justify-content:center;transition:all .2s;z-index:10;}
+    .popup-close:hover{background:var(--cr-red);border-color:var(--cr-red);}
+    .popup-video{margin-top:1.5rem;}
+    .popup-video iframe{width:100%;height:280px;border-radius:10px;border:1px solid var(--cr-border);}
+    .popup-yt-btn{display:inline-flex;align-items:center;gap:6px;margin-top:.75rem;background:#ff0000;color:#fff;padding:8px 18px;border-radius:6px;font-size:.8rem;font-weight:700;text-decoration:none;transition:opacity .2s;font-family:'Exo 2',sans-serif;}
+    .popup-yt-btn:hover{opacity:.85;}
+    footer{grid-column:1/-1;background:var(--cr-card);border-top:2px solid var(--cr-red);padding:3rem 2rem 90px;}
+    .footer-inner{max-width:900px;margin:0 auto;display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:2rem;}
+    .footer-brand .logo{display:inline-block;margin-bottom:.75rem;}
+    .footer-brand p{font-size:.85rem;color:var(--cr-muted);line-height:1.6;}
+    .footer-links h4{font-family:'Orbitron',monospace;font-size:.75rem;letter-spacing:2px;color:var(--cr-red);text-transform:uppercase;margin-bottom:1rem;}
+    .footer-links a{display:block;font-size:.85rem;color:var(--cr-muted);text-decoration:none;margin-bottom:6px;transition:color .2s;}
+    .footer-links a:hover{color:var(--cr-red);}
+    .footer-bottom{text-align:center;margin-top:2rem;padding-top:1.5rem;border-top:1px solid var(--cr-border);font-size:.75rem;color:var(--cr-muted);}
+    .section-divider{border:none;border-top:1px solid var(--cr-border);margin:3rem 0;}
+    ::-webkit-scrollbar{width:6px;}
+    ::-webkit-scrollbar-track{background:var(--cr-dark);}
+    ::-webkit-scrollbar-thumb{background:var(--cr-red);border-radius:3px;}
+    .spinner{display:inline-block;width:20px;height:20px;border:2px solid var(--cr-border);border-top-color:var(--cr-red);border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;}
+    @keyframes spin{to{transform:rotate(360deg);}}
+  </style>
+</head>
+<body>
+<div class="site-wrapper" id="top">
+
+  <header>
+    <a class="logo" href="#top">CR<span>Earnings</span></a>
+    <nav>
+      <a href="#top">Home</a>
+      <a href="#articles">Articles</a>
+      <a href="#about">About</a>
+    </nav>
+    <div class="header-right">
+      <button class="theme-btn" id="btn-dark" onclick="setTheme('dark')">🌙</button>
+      <button class="theme-btn" id="btn-system" onclick="setTheme('system')">⚙️</button>
+      <button class="theme-btn" id="btn-light" onclick="setTheme('light')">☀️</button>
+    </div>
+  </header>
+
+  <aside class="ad-left">
+    <div class="ad-label">Advertisement</div>
+    <div class="ad-slot" id="adLeftSlot"><div class="ad-placeholder">📢<br/>Ad Space<br/>Available</div></div>
+  </aside>
+
+  <main>
+    <section class="hero" id="home">
+      <div class="hero-badge">🇱🇰 Sri Lanka's #1 Crypto Airdrop Hub</div>
+      <h1>Get <span>Free Crypto</span><br/>Before It's Gone</h1>
+      <p>We find and verify the latest crypto airdrops so you never miss a free token opportunity.</p>
+    </section>
+
+    <section id="articles" style="scroll-margin-top:80px;">
+      <div class="section-title">Latest Airdrops</div>
+      <div id="loadingMsg" style="text-align:center;padding:2rem;color:var(--cr-muted);font-family:'Orbitron',monospace;font-size:.8rem;">
+        Loading airdrops <span class="spinner"></span>
+      </div>
+      <div class="cards-grid" id="cardsGrid"></div>
+      <div class="pagination" id="pagination"></div>
+    </section>
+
+    <hr class="section-divider" />
+
+    <div id="emptyState" style="display:none;text-align:center;padding:3rem;color:var(--cr-muted);">
+      <div style="font-size:3rem;">🪂</div>
+      <div style="font-family:'Orbitron',monospace;margin-top:1rem;">No airdrops yet.</div>
+      <div style="font-size:.85rem;margin-top:.5rem;">Check back soon for new opportunities!</div>
+    </div>
+  </main>
+
+  <aside class="ad-right">
+    <div class="ad-label">Advertisement</div>
+    <div class="ad-slot" id="adRightSlot"><div class="ad-placeholder">📢<br/>Ad Space<br/>Available</div></div>
+  </aside>
+
+  <footer id="about">
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <a class="logo" href="#top">CR<span>Earnings</span></a>
+        <p>Sri Lanka's trusted crypto airdrop tracking site. We curate the best free token opportunities for the Sri Lankan crypto community.</p>
+        <a href="https://youtube.com/@CR-Earnings" target="_blank" style="display:inline-flex;align-items:center;gap:6px;margin-top:12px;color:var(--cr-red);text-decoration:none;font-size:.85rem;">▶ Watch on YouTube @CR-Earnings</a>
+      </div>
+      <div class="footer-links">
+        <h4>Quick Links</h4>
+        <a href="#top">Home</a>
+        <a href="#articles">Articles</a>
+        <a href="https://youtube.com/@CR-Earnings" target="_blank">YouTube Channel</a>
+      </div>
+      <div class="footer-links">
+        <h4>About CR Earnings</h4>
+        <p style="font-size:.85rem;color:var(--cr-muted);line-height:1.6;">CR Earnings is dedicated to helping Sri Lankans discover and participate in crypto airdrops. All information is verified before publishing. Always DYOR.</p>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>© 2024 CR Earnings. Built for the Sri Lankan Crypto Community 🇱🇰</p>
+      <p style="margin-top:4px;font-size:.65rem;">Crypto involves risk. DYOR. Not financial advice.</p>
+    </div>
+  </footer>
+</div>
+
+<div class="ad-bottom">
+  <span class="bottom-ad-placeholder" id="bottomAdPlaceholder">📢 Advertisement Space</span>
+  <div id="bottomAdsContainer" style="display:none;width:100%;display:flex;gap:1rem;align-items:center;justify-content:center;"></div>
+</div>
+
+<div class="popup-overlay" id="popupOverlay" onclick="closePopupIfOutside(event)">
+  <div class="popup-box">
+    <button class="popup-close" onclick="closePopup()">✕</button>
+    <div id="popupInner"></div>
+  </div>
+</div>
+
+<script>
+// ══════ GIST ID – replaced by admin setup "Download Files" step ══════
+const SITE_GIST_ID = "__GIST_ID__";
+
+// ══════ THEME ══════
+let currentTheme=localStorage.getItem('cr_theme')||'system';
+function setTheme(t){currentTheme=t;localStorage.setItem('cr_theme',t);applyTheme();document.querySelectorAll('.theme-btn').forEach(b=>b.classList.remove('active'));document.getElementById('btn-'+t).classList.add('active');}
+function applyTheme(){const dark=currentTheme==='dark'||(currentTheme==='system'&&window.matchMedia('(prefers-color-scheme: dark)').matches);document.body.classList.toggle('light-mode',!dark);}
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change',applyTheme);
+setTheme(currentTheme);
+
+// ══════ DATA ══════
+let allArticles=[],allAds={left:[],right:[],bottom:[]},currentPage=1;
+const PER_PAGE=10;
+
+async function loadData(){
+  const loadMsg=document.getElementById('loadingMsg');
+  const gistId=(typeof SITE_GIST_ID!=='undefined'&&SITE_GIST_ID&&SITE_GIST_ID!=='__GIST_ID__')?SITE_GIST_ID:null;
+  if(!gistId){
+    loadMsg.innerHTML='<span style="color:var(--cr-muted);font-family:Orbitron,monospace;font-size:.8rem">⚙️ Site not configured yet.</span>';
+    return;
+  }
+  try{
+    const r=await fetch('https://api.github.com/gists/'+gistId,{headers:{'Accept':'application/vnd.github.v3+json'}});
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    const d=await r.json();
+    const raw=(d.files&&d.files['cr-data.json'])?d.files['cr-data.json'].content:'{}';
+    const db=JSON.parse(raw);
+    allArticles=db.articles||[];
+    allAds=db.ads||{left:[],right:[],bottom:[]};
+    loadMsg.style.display='none';
+    renderArticles();
+    renderAds();
+  }catch(e){
+    loadMsg.innerHTML='<span style="color:var(--cr-red);font-family:Orbitron,monospace;font-size:.8rem">⚠️ Failed to load data. Please try refreshing.</span>';
+    console.error(e);
+  }
+}
+
+function renderArticles(){
+  const now=new Date();
+  const visible=allArticles
+    .filter(a=>{
+      if(a.status==='draft')return false;
+      if(a.status==='scheduled')return a.scheduledAt&&new Date(a.scheduledAt)<=now;
+      return a.published!==false;
+    })
+    .sort((a,b)=>new Date(b.date)-new Date(a.date));
+  const grid=document.getElementById('cardsGrid'),pag=document.getElementById('pagination'),empty=document.getElementById('emptyState');
+  if(!visible.length){grid.innerHTML='';pag.innerHTML='';empty.style.display='block';return;}
+  empty.style.display='none';
+  const total=Math.ceil(visible.length/PER_PAGE);
+  const slice=visible.slice((currentPage-1)*PER_PAGE,currentPage*PER_PAGE);
+  grid.innerHTML=slice.map(a=>{
+    const isNew=(Date.now()-new Date(a.date))<86400000*3;
+    const img=a.image?`<img src="${esc(a.image)}" alt="${esc(a.title)}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><div class="card-img-placeholder" style="display:none">🪂</div>`:`<div class="card-img-placeholder">🪂</div>`;
+    return`<div class="airdrop-card" onclick="openPopup('${a.id}')">
+      ${isNew?'<span class="card-new-badge">NEW</span>':''}${img}
+      <div class="card-body"><div class="card-tag">Airdrop</div><div class="card-title">${esc(a.title)}</div><div class="card-date">${fmtDate(a.date)}</div></div>
+    </div>`;
+  }).join('');
+  if(total<=1){pag.innerHTML='';return;}
+  pag.innerHTML=`<button ${currentPage===1?'disabled':''} onclick="goPage(${currentPage-1})">← Prev</button><span class="page-info">Page ${currentPage} / ${total}</span><button ${currentPage===total?'disabled':''} onclick="goPage(${currentPage+1})">Next →</button>`;
+}
+function goPage(p){currentPage=p;renderArticles();document.getElementById('articles').scrollIntoView({behavior:'smooth'});}
+
+function openPopup(id){
+  const item=allArticles.find(a=>a.id===id);if(!item)return;
+  const imgHtml=item.image?`<img class="popup-img" src="${esc(item.image)}" onerror="this.outerHTML='<div class=popup-img-placeholder>🪂</div>'">`:'<div class="popup-img-placeholder">🪂</div>';
+  let vid='';
+  if(item.ytVideoId){const y=ytId(item.ytVideoId);if(y)vid=`<div class="popup-video"><iframe src="https://www.youtube.com/embed/${y}" frameborder="0" allowfullscreen></iframe><a href="https://www.youtube.com/watch?v=${y}" target="_blank" class="popup-yt-btn">▶ Watch on YouTube</a></div>`;}
+  document.getElementById('popupInner').innerHTML=`${imgHtml}<div class="popup-content"><div class="popup-title">${esc(item.title)}</div><div class="popup-meta">Posted: ${fmtDate(item.date)}</div><div class="popup-desc">${esc(item.description)}</div>${vid}</div>`;
+  document.getElementById('popupOverlay').classList.add('open');
+  document.body.style.overflow='hidden';
+}
+function closePopup(){document.getElementById('popupOverlay').classList.remove('open');document.body.style.overflow='';}
+function closePopupIfOutside(e){if(e.target===document.getElementById('popupOverlay'))closePopup();}
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closePopup();});
+
+function renderAds(){renderSide('adLeftSlot',allAds.left||[]);renderSide('adRightSlot',allAds.right||[]);renderBottom(allAds.bottom||[]);}
+function renderSide(id,list){
+  const s=document.getElementById(id);
+  if(!list.length){s.innerHTML='<div class="ad-placeholder">📢<br/>Ad Space<br/>Available</div>';return;}
+  s.innerHTML=list.map((a,i)=>`<div class="ad-item${i===0?' active':''}">${a.image?`<img src="${esc(a.image)}" alt="ad"/>`:''}${a.title?`<a href="${esc(a.link||'#')}" target="_blank">${esc(a.title)}</a>`:''}</div>`).join('');
+  let idx=0;
+  setInterval(()=>{const items=s.querySelectorAll('.ad-item');if(!items.length)return;items[idx].classList.remove('active');idx=(idx+1)%items.length;items[idx].classList.add('active');},10000);
+}
+function renderBottom(list){
+  const c=document.getElementById('bottomAdsContainer'),p=document.getElementById('bottomAdPlaceholder');
+  if(!list.length){p.style.display='';c.style.display='none';return;}
+  p.style.display='none';c.style.display='flex';
+  c.innerHTML=list.slice(0,4).map(a=>`<a class="bottom-ad-item" href="${esc(a.link||'#')}" target="_blank">${a.image?`<img src="${esc(a.image)}" alt="ad"/>`:''}${a.title?`<div class="bottom-ad-text"><strong>${esc(a.title)}</strong><small>${esc(a.subtitle||'Sponsored')}</small></div>`:''}</a>`).join('');
+}
+
+function esc(s){if(!s)return'';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
+function fmtDate(d){if(!d)return'';return new Date(d).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});}
+function ytId(v){if(!v)return null;const m=v.match(/(?:v=|youtu\.be\/|embed\/)([a-zA-Z0-9_-]{11})/);return m?m[1]:(v.length===11?v:null);}
+
+loadData();
+setInterval(loadData,5*60*1000);
+</script>
+</body>
+</html>

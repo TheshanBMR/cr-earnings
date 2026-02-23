@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CR Earnings – Admin</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Exo+2:wght@300;400;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root { --cr-red:#ff0000;--cr-dark:#0a0a0a;--cr-card:#111111;--cr-border:#2a2a2a;--cr-text:#f0f0f0;--cr-muted:#888888;--cr-glow:rgba(255,0,0,0.25); }
+    *{box-sizing:border-box;}
+    body{font-family:'Exo 2',sans-serif;background:var(--cr-dark);color:var(--cr-text);min-height:100vh;}
+    .btn-red{background:var(--cr-red);color:#fff;border:none;padding:8px 18px;border-radius:6px;font-family:'Exo 2',sans-serif;font-weight:700;cursor:pointer;font-size:0.85rem;transition:opacity .2s;}
+    .btn-red:hover{opacity:.85;}
+    .btn-ghost{background:transparent;color:var(--cr-muted);border:1px solid var(--cr-border);padding:8px 18px;border-radius:6px;font-family:'Exo 2',sans-serif;cursor:pointer;font-size:0.85rem;transition:all .2s;}
+    .btn-ghost:hover{border-color:var(--cr-red);color:var(--cr-red);}
+    input,textarea,select{background:#1a1a1a;border:1px solid var(--cr-border);color:var(--cr-text);border-radius:6px;padding:8px 12px;font-family:'Exo 2',sans-serif;font-size:0.9rem;width:100%;transition:border-color .2s;}
+    input:focus,textarea:focus,select:focus{outline:none;border-color:var(--cr-red);box-shadow:0 0 6px var(--cr-glow);}
+    label{display:block;font-size:0.8rem;color:var(--cr-muted);margin-bottom:4px;font-weight:600;letter-spacing:0.5px;}
+    .field{margin-bottom:1.1rem;}
+    .panel{background:var(--cr-card);border:1px solid var(--cr-border);border-radius:12px;padding:1.5rem;}
+    .section-title{font-family:'Orbitron',monospace;font-size:1rem;font-weight:700;letter-spacing:2px;color:var(--cr-red);text-transform:uppercase;margin-bottom:1.25rem;display:flex;align-items:center;gap:8px;}
+    .logo{font-family:'Orbitron',monospace;font-weight:900;font-size:1.3rem;color:var(--cr-red);letter-spacing:2px;}
+    .logo span{color:var(--cr-text);}
+    .tab-btn{background:transparent;border:none;color:var(--cr-muted);font-family:'Orbitron',monospace;font-size:0.7rem;letter-spacing:1px;text-transform:uppercase;padding:10px 16px;cursor:pointer;border-bottom:2px solid transparent;transition:all .2s;white-space:nowrap;}
+    .tab-btn:hover{color:var(--cr-text);}
+    .tab-btn.active{color:var(--cr-red);border-bottom-color:var(--cr-red);}
+    .toast{position:fixed;bottom:2rem;right:2rem;background:#1a1a1a;border:1px solid var(--cr-red);color:var(--cr-text);padding:12px 20px;border-radius:8px;font-size:0.85rem;z-index:9999;transform:translateY(100px);opacity:0;transition:all .3s;box-shadow:0 0 15px var(--cr-glow);max-width:320px;}
+    .toast.show{transform:translateY(0);opacity:1;}
+    .toast.success{border-color:#00cc44;}
+    .toast.error{border-color:#ff4444;}
+    .article-row{display:flex;align-items:center;gap:1rem;padding:12px;border:1px solid var(--cr-border);border-radius:8px;margin-bottom:8px;background:#0f0f0f;flex-wrap:wrap;}
+    .article-row:hover{border-color:var(--cr-red);}
+    .article-row img{width:50px;height:50px;object-fit:cover;border-radius:6px;flex-shrink:0;}
+    .thumb-placeholder{width:50px;height:50px;background:#1a0000;border-radius:6px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+    .badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:0.65rem;font-weight:700;}
+    .badge-published{background:rgba(0,200,0,.15);color:#00cc44;border:1px solid #00cc44;}
+    .badge-draft{background:rgba(255,200,0,.1);color:#ffcc00;border:1px solid #ffcc00;}
+    .badge-scheduled{background:rgba(0,150,255,.1);color:#44aaff;border:1px solid #44aaff;}
+    .ad-row{display:flex;align-items:center;gap:.75rem;padding:10px;border:1px solid var(--cr-border);border-radius:8px;margin-bottom:6px;background:#0f0f0f;}
+    .admin-row{display:flex;align-items:center;gap:1rem;padding:12px;border:1px solid var(--cr-border);border-radius:8px;margin-bottom:8px;background:#0f0f0f;flex-wrap:wrap;}
+    .admin-row:hover{border-color:var(--cr-red);}
+    .spinner{display:inline-block;width:14px;height:14px;border:2px solid var(--cr-border);border-top-color:var(--cr-red);border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-left:4px;}
+    @keyframes spin{to{transform:rotate(360deg);}}
+    .setup-box{background:rgba(255,0,0,.05);border:1px solid var(--cr-red);border-radius:10px;padding:1rem;margin-bottom:1rem;font-size:.82rem;line-height:1.6;}
+    .info-box{background:rgba(0,150,255,.05);border:1px solid #44aaff;border-radius:10px;padding:1rem;margin-bottom:1rem;font-size:.82rem;line-height:1.6;color:#aad4ff;}
+    .success-box{background:rgba(0,200,0,.05);border:1px solid #00cc44;border-radius:10px;padding:1rem;margin-bottom:1rem;font-size:.82rem;line-height:1.6;color:#aaffcc;}
+    .superadmin-badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:0.65rem;font-weight:700;background:rgba(255,0,0,.15);color:var(--cr-red);border:1px solid var(--cr-red);}
+    .sync-status{font-size:.72rem;color:var(--cr-muted);font-family:'Orbitron',monospace;letter-spacing:1px;}
+    .sync-status.ok{color:#00cc44;}
+    .sync-status.err{color:#ff4444;}
+    .modal-backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:200;overflow-y:auto;padding:2rem 1rem;}
+    .modal-box{background:var(--cr-card);border:1px solid var(--cr-red);border-radius:14px;max-width:620px;margin:0 auto;padding:2rem;position:relative;}
+  </style>
+</head>
+<body>
+
+<!-- ══════ SETUP SCREEN ══════ -->
+<div id="setupScreen" style="display:none;min-height:100vh;align-items:center;justify-content:center;padding:1rem;">
+  <div style="width:100%;max-width:540px;">
+    <div style="text-align:center;margin-bottom:2rem;">
+      <div class="logo">CR<span>Earnings</span></div>
+      <div style="font-size:.75rem;color:var(--cr-muted);margin-top:4px;letter-spacing:1px;font-family:'Orbitron',monospace;">FIRST TIME SETUP</div>
+    </div>
+
+    <!-- STEP 1: Fill details -->
+    <div id="setupStep1" class="panel">
+      <div class="setup-box">
+        <strong style="color:var(--cr-red);">⚠️ One-time setup required</strong><br/>
+        CR Earnings uses a <strong>GitHub Gist</strong> as a free database so all visitors see the same articles.
+      </div>
+      <div class="info-box">
+        <strong>How to set up:</strong><br/>
+        1. Go to <a href="https://gist.github.com" target="_blank" style="color:#88ccff;">gist.github.com</a> → New secret gist<br/>
+        2. Filename: <code>cr-data.json</code> · Content: <code>{}</code> → Click <strong>Create secret gist</strong><br/>
+        3. Copy the <strong>Gist ID</strong> from the URL (the long code after your username)<br/>
+        4. Go to <a href="https://github.com/settings/tokens" target="_blank" style="color:#88ccff;">GitHub → Settings → Developer settings → Personal access tokens (classic)</a><br/>
+        5. Generate token → tick <strong>gist</strong> scope only → copy it<br/>
+        6. Fill in below 👇
+      </div>
+      <div class="field"><label>GitHub Gist ID</label><input type="text" id="setupGistId" placeholder="abc123def456..." /></div>
+      <div class="field"><label>GitHub Personal Access Token</label><input type="password" id="setupGistToken" placeholder="ghp_xxxxxxxxxxxx" /></div>
+      <div class="field"><label>Your Admin Username</label><input type="text" id="setupUsername" placeholder="superadmin" /></div>
+      <div class="field"><label>Your Admin Password</label><input type="password" id="setupPassword" /></div>
+      <div class="field"><label>Confirm Password</label><input type="password" id="setupPassword2" /></div>
+      <div id="setupError" style="color:#ff4444;font-size:.8rem;margin-bottom:.75rem;display:none;"></div>
+      <button class="btn-red" style="width:100%;" id="setupBtn" onclick="doSetup()">Complete Setup</button>
+    </div>
+
+    <!-- STEP 2: Download files (shown after setup) -->
+    <div id="setupStep2" class="panel" style="display:none;">
+      <div class="success-box">
+        <strong>✅ Setup complete!</strong><br/>
+        Your Gist database is ready. Now you need to <strong>download the updated files</strong> and push them to GitHub so every visitor can see the articles.
+      </div>
+      <div class="info-box">
+        <strong>Why this step?</strong><br/>
+        The site reads your Gist ID directly from the HTML files. We need to bake your Gist ID into <code>index.html</code> and <code>admin.html</code> so any browser worldwide can load data — not just yours.
+      </div>
+      <div style="display:flex;flex-direction:column;gap:.75rem;margin-bottom:1.25rem;">
+        <button class="btn-red" style="width:100%;" onclick="downloadFile('index')">⬇ Download index.html</button>
+        <button class="btn-red" style="width:100%;" onclick="downloadFile('admin')">⬇ Download admin.html</button>
+      </div>
+      <div class="info-box">
+        <strong>After downloading:</strong><br/>
+        1. Replace <strong>both</strong> files in your GitHub repo with the downloaded ones<br/>
+        2. Push / commit to GitHub<br/>
+        3. Wait ~1 min for GitHub Pages to update<br/>
+        4. Open your site on any device — it will work! ✅
+      </div>
+      <button class="btn-ghost" style="width:100%;" onclick="goToLogin()">Already uploaded? → Go to Login</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════ LOGIN SCREEN ══════ -->
+<div id="loginScreen" style="display:none;min-height:100vh;align-items:center;justify-content:center;padding:1rem;">
+  <div style="width:100%;max-width:380px;">
+    <div style="text-align:center;margin-bottom:2rem;">
+      <div class="logo">CR<span>Earnings</span></div>
+      <div style="font-size:.75rem;color:var(--cr-muted);margin-top:4px;letter-spacing:1px;font-family:'Orbitron',monospace;">ADMIN PANEL</div>
+    </div>
+    <div class="panel">
+      <div class="field"><label>Username</label><input type="text" id="loginUsername" autocomplete="off" /></div>
+      <div class="field"><label>Password</label><input type="password" id="loginPassword" /></div>
+      <div id="loginError" style="color:#ff4444;font-size:.8rem;margin-bottom:.75rem;display:none;"></div>
+      <button class="btn-red" style="width:100%;" id="loginBtn" onclick="doLogin()">Login</button>
+    </div>
+    <p style="text-align:center;font-size:.7rem;color:var(--cr-muted);margin-top:1rem;">
+      <a href="index.html" style="color:var(--cr-muted);">← Back to Site</a>
+    </p>
+  </div>
+</div>
+
+<!-- ══════ DASHBOARD ══════ -->
+<div id="adminDashboard" style="display:none;">
+  <header style="background:var(--cr-card);border-bottom:2px solid var(--cr-red);padding:0 1.5rem;height:60px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50;box-shadow:0 0 20px var(--cr-glow);">
+    <div style="display:flex;align-items:center;gap:1rem;">
+      <div class="logo">CR<span>Earnings</span> <span style="font-size:.7rem;color:var(--cr-muted);letter-spacing:2px;">ADMIN</span></div>
+      <span id="syncStatus" class="sync-status"></span>
+    </div>
+    <div style="display:flex;gap:.5rem;align-items:center;">
+      <span id="loggedAsLabel" style="font-size:.75rem;color:var(--cr-muted);"></span>
+      <a href="index.html" target="_blank" class="btn-ghost" style="text-decoration:none;font-size:.75rem;">View Site ↗</a>
+      <button class="btn-ghost" onclick="doLogout()">Logout</button>
+    </div>
+  </header>
+
+  <div style="background:var(--cr-card);border-bottom:1px solid var(--cr-border);padding:0 1.5rem;display:flex;gap:.5rem;overflow-x:auto;">
+    <button class="tab-btn active" id="tab-articles" onclick="switchTab('articles')">📰 Articles</button>
+    <button class="tab-btn" id="tab-ads" onclick="switchTab('ads')">📢 Ads</button>
+    <button class="tab-btn" id="tab-admins" onclick="switchTab('admins')">👥 Admins</button>
+    <button class="tab-btn" id="tab-settings" onclick="switchTab('settings')">⚙️ Settings</button>
+  </div>
+
+  <div style="max-width:1000px;margin:0 auto;padding:2rem 1.5rem 4rem;">
+
+    <!-- ARTICLES TAB -->
+    <div id="tabArticles">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;flex-wrap:wrap;gap:1rem;">
+        <div class="section-title" style="margin:0;">Manage Airdrops</div>
+        <div style="display:flex;gap:.5rem;">
+          <button class="btn-ghost" style="font-size:.75rem;" onclick="syncFromGist(true)">🔄 Refresh</button>
+          <button class="btn-red" onclick="openArticleForm()">+ Add Airdrop</button>
+        </div>
+      </div>
+      <div id="articlesList"><div style="text-align:center;padding:2rem;color:var(--cr-muted);">Loading<span class="spinner"></span></div></div>
+    </div>
+
+    <!-- ADS TAB -->
+    <div id="tabAds" style="display:none;">
+      <div class="section-title">Manage Advertisements</div>
+      <div class="panel" style="margin-bottom:1.5rem;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+          <strong>Left Sidebar Ads</strong>
+          <button class="btn-red" style="font-size:.75rem;padding:6px 12px;" onclick="openAdForm('left')">+ Add</button>
+        </div>
+        <p style="font-size:.75rem;color:var(--cr-muted);margin-bottom:1rem;">Rotate every 10 seconds. Recommended: 140×300px</p>
+        <div id="adLeftList"></div>
+      </div>
+      <div class="panel" style="margin-bottom:1.5rem;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+          <strong>Right Sidebar Ads</strong>
+          <button class="btn-red" style="font-size:.75rem;padding:6px 12px;" onclick="openAdForm('right')">+ Add</button>
+        </div>
+        <p style="font-size:.75rem;color:var(--cr-muted);margin-bottom:1rem;">Rotate every 10 seconds. Recommended: 140×300px</p>
+        <div id="adRightList"></div>
+      </div>
+      <div class="panel">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+          <strong>Bottom Bar Ads</strong>
+          <button class="btn-red" style="font-size:.75rem;padding:6px 12px;" onclick="openAdForm('bottom')">+ Add</button>
+        </div>
+        <p style="font-size:.75rem;color:var(--cr-muted);margin-bottom:1rem;">Fixed bottom bar – max 4, no rotation. Recommended: 50×50px</p>
+        <div id="adBottomList"></div>
+      </div>
+    </div>
+
+    <!-- ADMINS TAB -->
+    <div id="tabAdmins" style="display:none;">
+      <div class="section-title">Admin Accounts</div>
+      <div id="superadminOnlyMsg" style="display:none;" class="info-box">Only the <strong>Super Admin</strong> can manage admin accounts.</div>
+      <div id="adminManagePanel">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;flex-wrap:wrap;gap:1rem;">
+          <p style="font-size:.85rem;color:var(--cr-muted);">All admins can add/edit/delete articles and ads. Only Super Admin can add/remove admins.</p>
+          <button class="btn-red" onclick="openAdminForm()">+ Add Admin</button>
+        </div>
+        <div id="adminsList"></div>
+      </div>
+    </div>
+
+    <!-- SETTINGS TAB -->
+    <div id="tabSettings" style="display:none;">
+      <div class="section-title">My Account Settings</div>
+      <div class="panel" style="max-width:500px;">
+        <p style="font-size:.8rem;color:var(--cr-muted);margin-bottom:1.25rem;">Change your own login credentials. Leave new password blank to keep unchanged.</p>
+        <div class="field"><label>New Username</label><input type="text" id="newUsername" /></div>
+        <div class="field"><label>New Password</label><input type="password" id="newPassword" placeholder="Leave blank to keep current" /></div>
+        <div class="field"><label>Confirm New Password</label><input type="password" id="confirmPassword" /></div>
+        <div class="field"><label>Current Password (required to confirm)</label><input type="password" id="currentPasswordVerify" /></div>
+        <button class="btn-red" id="saveSettingsBtn" onclick="saveSettings()">Save Changes</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ARTICLE MODAL -->
+<div class="modal-backdrop" id="articleModal">
+  <div class="modal-box" style="max-width:620px;">
+    <button onclick="closeModal('articleModal')" style="position:absolute;top:12px;right:12px;background:transparent;border:1px solid var(--cr-border);color:var(--cr-text);width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:1rem;">✕</button>
+    <div class="section-title" id="articleFormTitle">Add New Airdrop</div>
+    <input type="hidden" id="editId" />
+    <div class="field"><label>Title *</label><input type="text" id="artTitle" placeholder="e.g. XYZ Token Free Airdrop – Claim Now!" /></div>
+    <div class="field"><label>Description *</label><textarea id="artDesc" rows="6" placeholder="Full details – steps, rewards, deadline..."></textarea></div>
+    <div class="field"><label>Cover Image URL</label><input type="url" id="artImage" placeholder="https://example.com/image.jpg" /></div>
+    <div class="field"><label>YouTube Video URL or ID</label><input type="text" id="artYt" placeholder="https://youtu.be/..." /></div>
+    <div class="field">
+      <label>Status</label>
+      <select id="artStatus" onchange="document.getElementById('scheduleField').style.display=this.value==='scheduled'?'block':'none'">
+        <option value="published">Published (visible now)</option>
+        <option value="draft">Draft (hidden)</option>
+        <option value="scheduled">Scheduled (auto-publish at date below)</option>
+      </select>
+    </div>
+    <div class="field" id="scheduleField" style="display:none;">
+      <label>Schedule Date & Time</label>
+      <input type="datetime-local" id="artSchedule" />
+      <small style="color:var(--cr-muted);font-size:.72rem;">Article auto-publishes at this date/time.</small>
+    </div>
+    <div style="display:flex;gap:.75rem;justify-content:flex-end;margin-top:1.5rem;">
+      <button class="btn-ghost" onclick="closeModal('articleModal')">Cancel</button>
+      <button class="btn-red" id="saveArticleBtn" onclick="saveArticle()">Save Airdrop</button>
+    </div>
+  </div>
+</div>
+
+<!-- AD MODAL -->
+<div class="modal-backdrop" id="adModal">
+  <div class="modal-box" style="max-width:480px;">
+    <button onclick="closeModal('adModal')" style="position:absolute;top:12px;right:12px;background:transparent;border:1px solid var(--cr-border);color:var(--cr-text);width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:1rem;">✕</button>
+    <div class="section-title" id="adFormTitle">Add Ad</div>
+    <input type="hidden" id="adZone" /><input type="hidden" id="editAdId" />
+    <div class="field"><label>Ad Title</label><input type="text" id="adTitle" /></div>
+    <div class="field"><label>Subtitle (bottom bar only)</label><input type="text" id="adSubtitle" placeholder="Sponsored" /></div>
+    <div class="field"><label>Image URL</label><input type="url" id="adImage" /></div>
+    <div class="field"><label>Link URL</label><input type="url" id="adLink" /></div>
+    <div style="display:flex;gap:.75rem;justify-content:flex-end;margin-top:1.5rem;">
+      <button class="btn-ghost" onclick="closeModal('adModal')">Cancel</button>
+      <button class="btn-red" id="saveAdBtn" onclick="saveAd()">Save Ad</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADMIN MODAL -->
+<div class="modal-backdrop" id="adminModal">
+  <div class="modal-box" style="max-width:440px;">
+    <button onclick="closeModal('adminModal')" style="position:absolute;top:12px;right:12px;background:transparent;border:1px solid var(--cr-border);color:var(--cr-text);width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:1rem;">✕</button>
+    <div class="section-title" id="adminFormTitle">Add Admin</div>
+    <input type="hidden" id="editAdminId" />
+    <div class="field"><label>Username *</label><input type="text" id="adminUsername" autocomplete="off" /></div>
+    <div class="field">
+      <label>Password <span id="adminPwNote" style="color:var(--cr-muted);font-size:.7rem;display:none;">(leave blank to keep current)</span></label>
+      <input type="password" id="adminPassword" />
+    </div>
+    <div style="display:flex;gap:.75rem;justify-content:flex-end;margin-top:1.5rem;">
+      <button class="btn-ghost" onclick="closeModal('adminModal')">Cancel</button>
+      <button class="btn-red" id="saveAdminBtn" onclick="saveAdmin()">Save Admin</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ══════ GIST ID – baked in during setup via "Download Files" ══════
+const SITE_GIST_ID = "__GIST_ID__";
+
+// ══════ SECURITY ══════
+const _P=[67,82,95,83,101,99,114,101,116,95,80,101,112,112,101,114,95,118,50,95,88,75,57].map(c=>String.fromCharCode(c)).join('');
+function crHash(str){let h1=0xdeadbeef^str.length,h2=0x41c6ce57^str.length;for(let i=0;i<str.length;i++){const c=str.charCodeAt(i);h1=Math.imul(h1^c,2654435761);h2=Math.imul(h2^c,1597334677);}h1=Math.imul(h1^(h1>>>16),2246822507)^Math.imul(h2^(h2>>>13),3266489909);h2=Math.imul(h2^(h2>>>16),2246822507)^Math.imul(h1^(h1>>>13),3266489909);return((4294967296*(2097151&h2))+(h1>>>0)).toString(16).padStart(16,'0');}
+function hashPassword(u,p){const s1=crHash(_P+'|'+u.toLowerCase()+'|'+p);const s2=crHash(s1+_P+p.length+u);return crHash(s2+'|'+_P+'|'+s1);}
+function genId(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7);}
+
+// ══════ CONFIG ══════
+// Token stored locally only (secret). Gist ID is baked into the HTML itself.
+const CFG_KEY='cr_gist_config';
+function getConfig(){try{return JSON.parse(localStorage.getItem(CFG_KEY)||'null');}catch{return null;}}
+function saveConfig(c){if(c)localStorage.setItem(CFG_KEY,JSON.stringify(c));else localStorage.removeItem(CFG_KEY);}
+
+// The effective Gist ID: prefer baked-in value, fall back to localStorage (for first-time setup browser)
+function getGistId(){
+  if(SITE_GIST_ID&&SITE_GIST_ID!=='__GIST_ID__')return SITE_GIST_ID;
+  const c=getConfig();return c?c.gistId:null;
+}
+function getToken(){const c=getConfig();return c?c.token:null;}
+function isFullyConfigured(){return !!(getGistId()&&getToken());}
+
+// ══════ GIST DB ══════
+let DB=null;
+
+async function fetchGist(){
+  const gistId=getGistId(),token=getToken();
+  if(!gistId)return null;
+  try{
+    const headers={'Accept':'application/vnd.github.v3+json'};
+    if(token)headers['Authorization']='token '+token;
+    const r=await fetch('https://api.github.com/gists/'+gistId,{headers});
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    const d=await r.json();
+    const raw=(d.files&&d.files['cr-data.json'])?d.files['cr-data.json'].content:'{}';
+    DB=JSON.parse(raw);
+    if(!DB.articles)DB.articles=[];
+    if(!DB.ads)DB.ads={left:[],right:[],bottom:[]};
+    if(!DB.admins)DB.admins=[];
+    setSyncStatus('ok','● Synced');
+    return DB;
+  }catch(e){setSyncStatus('err','● Sync Error');console.error(e);return null;}
+}
+
+async function pushGist(data){
+  const gistId=getGistId(),token=getToken();
+  if(!gistId||!token){showToast('No write token – login with your token first.','error');return false;}
+  try{
+    const r=await fetch('https://api.github.com/gists/'+gistId,{method:'PATCH',headers:{'Authorization':'token '+token,'Accept':'application/vnd.github.v3+json','Content-Type':'application/json'},body:JSON.stringify({files:{'cr-data.json':{content:JSON.stringify(data)}}})});
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    DB=data;setSyncStatus('ok','● Synced');return true;
+  }catch(e){setSyncStatus('err','● Sync Failed');console.error(e);return false;}
+}
+
+function setSyncStatus(cls,text){const el=document.getElementById('syncStatus');if(!el)return;el.className='sync-status '+(cls||'');el.textContent=text;}
+
+async function syncFromGist(toast){
+  setSyncStatus('','● Syncing...');
+  const d=await fetchGist();
+  if(d){renderArticlesList();renderAllAdLists();renderAdminsList();if(toast)showToast('Refreshed!','success');}
+  else if(toast)showToast('Sync failed – check connection.','error');
+}
+
+// ══════ SESSION ══════
+const SESS_KEY='cr_admin_sess_v2';
+let ME=null;
+function getSession(){try{return JSON.parse(sessionStorage.getItem(SESS_KEY)||'null');}catch{return null;}}
+function saveSession(u){sessionStorage.setItem(SESS_KEY,JSON.stringify(u));ME=u;}
+function clearSession(){sessionStorage.removeItem(SESS_KEY);ME=null;}
+
+// ══════ FILE DOWNLOAD (bakes Gist ID into both HTML files) ══════
+// We store the raw source of both files in the gist itself so we can serve updated downloads
+// Simpler: we just replace __GIST_ID__ in the current page source
+async function downloadFile(which){
+  let src='';
+  if(which==='admin'){
+    // Get this page's source
+    src=document.documentElement.outerHTML;
+    // Fix: outerHTML won't have <!DOCTYPE html>, add it back
+    src='<!DOCTYPE html>\n'+src;
+  } else {
+    // Fetch index.html source from server
+    try{
+      const r=await fetch('index.html?_='+Date.now());
+      if(!r.ok)throw new Error('not found');
+      src=await r.text();
+    }catch(e){
+      showToast('Could not fetch index.html. Make sure both files are in same folder.','error');
+      return;
+    }
+  }
+  const gistId=getGistId();
+  if(!gistId){showToast('No Gist ID found. Complete setup first.','error');return;}
+  // Replace placeholder with real Gist ID
+  src=src.replace(/__GIST_ID__/g,gistId);
+  // Download
+  const blob=new Blob([src],{type:'text/html'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download=which==='admin'?'admin.html':'index.html';
+  a.click();
+  URL.revokeObjectURL(a.href);
+  showToast('Downloaded '+a.download+' ✅','success');
+}
+
+// ══════ INIT ══════
+(async function init(){
+  const gistId=getGistId();
+  const s=getSession();
+
+  // If Gist ID is baked in OR we have it in localStorage (setup browser before downloading files)
+  if(gistId){
+    // Try to load from gist to check if admins exist
+    const data=await fetchGist();
+    if(data&&data.admins&&data.admins.length>0){
+      // Admins exist → go to login or dashboard
+      if(s){ME=s;await showDashboard();return;}
+      showScreen('loginScreen');
+      return;
+    }
+    // Gist ID known but no admins yet → show setup (this shouldn't normally happen after first setup)
+    if(!getToken()){
+      // Baked-in ID but no token → show login (admin from another device can login read-only)
+      showScreen('loginScreen');
+      return;
+    }
+  }
+
+  // No gist ID anywhere → show setup
+  showScreen('setupScreen');
+})();
+
+function showScreen(id){
+  ['setupScreen','loginScreen','adminDashboard'].forEach(s=>{
+    const el=document.getElementById(s);
+    if(!el)return;
+    if(s===id){el.style.display=s==='adminDashboard'?'block':'flex';}
+    else el.style.display='none';
+  });
+}
+
+function goToLogin(){showScreen('loginScreen');}
+
+// ══════ SETUP ══════
+async function doSetup(){
+  const gistId=v('setupGistId'),token=v('setupGistToken'),username=v('setupUsername').toLowerCase(),pw=v('setupPassword'),pw2=v('setupPassword2');
+  const errEl=document.getElementById('setupError');errEl.style.display='none';
+  if(!gistId||!token||!username||!pw){err(errEl,'All fields are required.');return;}
+  if(pw!==pw2){err(errEl,'Passwords do not match.');return;}
+  const btn=document.getElementById('setupBtn');btn.innerHTML='Saving...<span class="spinner"></span>';btn.disabled=true;
+
+  // Save config locally so we can use it for download and for this browser session
+  saveConfig({gistId,token});
+
+  // Try to fetch gist (creates/validates connection)
+  const existing=await fetchGist();
+  if(!existing){
+    saveConfig(null);
+    err(errEl,'Cannot connect to Gist. Check Gist ID and Token.');
+    btn.textContent='Complete Setup';btn.disabled=false;return;
+  }
+
+  // Block setup if admins already exist
+  if(existing.admins&&existing.admins.length>0){
+    err(errEl,'This Gist already has admins set up. Go to Login instead.');
+    btn.textContent='Complete Setup';btn.disabled=false;return;
+  }
+
+  const superAdmin={id:genId(),username,passwordHash:hashPassword(username,pw),isSuperAdmin:true,createdAt:new Date().toISOString()};
+  const initData={articles:existing.articles||[],ads:existing.ads||{left:[],right:[],bottom:[]},admins:[superAdmin]};
+  const ok=await pushGist(initData);
+  if(!ok){err(errEl,'Cannot write to Gist. Check Token has gist scope.');btn.textContent='Complete Setup';btn.disabled=false;return;}
+
+  // Save session
+  saveSession({id:superAdmin.id,username:superAdmin.username,isSuperAdmin:true});
+
+  // Show step 2: download files
+  document.getElementById('setupStep1').style.display='none';
+  document.getElementById('setupStep2').style.display='block';
+  btn.textContent='Complete Setup';btn.disabled=false;
+}
+
+// ══════ LOGIN ══════
+async function doLogin(){
+  const username=v('loginUsername').toLowerCase(),password=v('loginPassword');
+  const errEl=document.getElementById('loginError');errEl.style.display='none';
+  if(!username||!password){err(errEl,'Enter username and password.');return;}
+  const btn=document.getElementById('loginBtn');btn.innerHTML='Checking...<span class="spinner"></span>';btn.disabled=true;
+
+  // For login, we only need gistId (public read). Token comes from localStorage if available.
+  const data=await fetchGist();
+  if(!data){err(errEl,'Cannot reach database. Check internet connection.');btn.textContent='Login';btn.disabled=false;return;}
+
+  const ph=hashPassword(username,password);
+  const admin=data.admins.find(a=>a.username===username&&a.passwordHash===ph);
+  if(!admin){err(errEl,'Invalid username or password.');document.getElementById('loginPassword').value='';btn.textContent='Login';btn.disabled=false;return;}
+
+  saveSession({id:admin.id,username:admin.username,isSuperAdmin:!!admin.isSuperAdmin});
+  await showDashboard();
+  btn.textContent='Login';btn.disabled=false;
+}
+document.getElementById('loginPassword').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
+document.getElementById('loginUsername').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
+
+function doLogout(){clearSession();location.reload();}
+
+// ══════ DASHBOARD ══════
+async function showDashboard(){
+  showScreen('adminDashboard');
+  document.getElementById('loggedAsLabel').textContent='👤 '+ME.username+(ME.isSuperAdmin?' (Super Admin)':'');
+  document.getElementById('newUsername').value=ME.username;
+  if(!ME.isSuperAdmin)document.getElementById('tab-admins').style.display='none';
+  if(!getToken()){
+    setSyncStatus('err','⚠ Read-only – no write token on this device');
+  }
+  await syncFromGist(false);
+}
+
+// ══════ TABS ══════
+function switchTab(tab){
+  ['articles','ads','admins','settings'].forEach(t=>{
+    const p=document.getElementById('tab'+t[0].toUpperCase()+t.slice(1));
+    if(p)p.style.display=t===tab?'block':'none';
+    const b=document.getElementById('tab-'+t);
+    if(b)b.classList.toggle('active',t===tab);
+  });
+  if(tab==='ads')renderAllAdLists();
+  if(tab==='admins')renderAdminsList();
+}
+
+// ══════ ARTICLES ══════
+function getArticles(){return DB&&DB.articles?DB.articles:[];}
+
+function renderArticlesList(){
+  const all=getArticles().sort((a,b)=>new Date(b.date)-new Date(a.date));
+  const el=document.getElementById('articlesList');
+  if(!all.length){el.innerHTML='<div style="text-align:center;padding:2rem;color:var(--cr-muted);">No airdrops yet. Click "+ Add Airdrop".</div>';return;}
+  const now=new Date();
+  el.innerHTML=all.map(a=>{
+    let status=a.status||(a.published===false?'draft':'published');
+    let bc='badge-published',bt='Published';
+    if(status==='draft'){bc='badge-draft';bt='Draft';}
+    else if(status==='scheduled'){if(a.scheduledAt&&new Date(a.scheduledAt)>now){bc='badge-scheduled';bt='Scheduled: '+fmtDate(a.scheduledAt);}else{bt='Published';}}
+    return`<div class="article-row">
+      ${a.image?`<img src="${esc(a.image)}" alt="" onerror="this.style.display='none'"/>`:`<div class="thumb-placeholder">🪂</div>`}
+      <div style="flex:1;min-width:0;">
+        <div style="font-weight:600;font-size:.9rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(a.title)}</div>
+        <div style="font-size:.72rem;color:var(--cr-muted);">${fmtDate(a.date)} · by ${esc(a.addedBy||'admin')}</div>
+      </div>
+      <span class="badge ${bc}">${bt}</span>
+      <div style="display:flex;gap:6px;">
+        <button class="btn-ghost" style="padding:5px 12px;font-size:.75rem;" onclick="editArticle('${a.id}')">Edit</button>
+        <button class="btn-ghost" style="padding:5px 12px;font-size:.75rem;color:#ff4444;border-color:#ff4444;" onclick="deleteArticle('${a.id}')">Del</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function openArticleForm(){
+  document.getElementById('editId').value='';
+  ['artTitle','artImage','artYt'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('artDesc').value='';
+  document.getElementById('artStatus').value='published';
+  document.getElementById('artSchedule').value='';
+  document.getElementById('scheduleField').style.display='none';
+  document.getElementById('articleFormTitle').textContent='Add New Airdrop';
+  openModal('articleModal');
+}
+
+function editArticle(id){
+  const a=getArticles().find(x=>x.id===id);if(!a)return;
+  document.getElementById('editId').value=id;
+  document.getElementById('artTitle').value=a.title||'';
+  document.getElementById('artDesc').value=a.description||'';
+  document.getElementById('artImage').value=a.image||'';
+  document.getElementById('artYt').value=a.ytVideoId||'';
+  const status=a.status||(a.published===false?'draft':'published');
+  document.getElementById('artStatus').value=status;
+  document.getElementById('scheduleField').style.display=status==='scheduled'?'block':'none';
+  if(a.scheduledAt){const d=new Date(a.scheduledAt);document.getElementById('artSchedule').value=new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,16);}
+  document.getElementById('articleFormTitle').textContent='Edit Airdrop';
+  openModal('articleModal');
+}
+
+async function saveArticle(){
+  const title=v('artTitle'),desc=v('artDesc');
+  if(!title||!desc){showToast('Title and description required!','error');return;}
+  const status=document.getElementById('artStatus').value;
+  let scheduledAt=null;
+  if(status==='scheduled'){const sv=v('artSchedule');if(!sv){showToast('Pick a schedule date/time.','error');return;}scheduledAt=new Date(sv).toISOString();}
+  const btn=document.getElementById('saveArticleBtn');btn.innerHTML='Saving...<span class="spinner"></span>';btn.disabled=true;
+  const id=v('editId')||genId();
+  const all=getArticles();
+  const idx=all.findIndex(a=>a.id===id);
+  const article={id,title,description:desc,image:v('artImage'),ytVideoId:v('artYt'),status,scheduledAt,published:status==='published',addedBy:ME.username,date:idx>=0?all[idx].date:new Date().toISOString()};
+  if(idx>=0)all[idx]=article;else all.push(article);
+  const ok=await pushGist({...DB,articles:all});
+  btn.textContent='Save Airdrop';btn.disabled=false;
+  if(ok){closeModal('articleModal');renderArticlesList();showToast(idx>=0?'Updated & synced!':'Published & synced!','success');}
+  else showToast('Failed to save. Try again.','error');
+}
+
+async function deleteArticle(id){
+  if(!confirm('Delete this airdrop?'))return;
+  const ok=await pushGist({...DB,articles:getArticles().filter(a=>a.id!==id)});
+  if(ok){renderArticlesList();showToast('Deleted.','success');}else showToast('Delete failed.','error');
+}
+
+// ══════ ADS ══════
+function getAds(){return DB&&DB.ads?DB.ads:{left:[],right:[],bottom:[]};}
+
+function renderAllAdLists(){
+  const ads=getAds();
+  renderAdList('adLeftList',ads.left||[],'left');
+  renderAdList('adRightList',ads.right||[],'right');
+  renderAdList('adBottomList',ads.bottom||[],'bottom');
+}
+
+function renderAdList(elId,list,zone){
+  const el=document.getElementById(elId);
+  if(!list||!list.length){el.innerHTML='<div style="color:var(--cr-muted);font-size:.8rem;padding:8px;">No ads yet.</div>';return;}
+  el.innerHTML=list.map((ad,i)=>`
+    <div class="ad-row">
+      ${ad.image?`<img src="${esc(ad.image)}" style="width:40px;height:40px;object-fit:cover;border-radius:5px;border:1px solid var(--cr-border);"/>`:'<div style="width:40px;height:40px;background:#1a0000;border-radius:5px;"></div>'}
+      <div style="flex:1;min-width:0;"><div style="font-size:.85rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(ad.title||'(no title)')}</div><div style="font-size:.7rem;color:var(--cr-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(ad.link||'')}</div></div>
+      <button class="btn-ghost" style="padding:4px 10px;font-size:.72rem;" onclick="editAd('${zone}',${i})">Edit</button>
+      <button class="btn-ghost" style="padding:4px 10px;font-size:.72rem;color:#ff4444;border-color:#ff4444;" onclick="deleteAd('${zone}',${i})">Del</button>
+    </div>`).join('');
+}
+
+function openAdForm(zone){
+  document.getElementById('adZone').value=zone;document.getElementById('editAdId').value='';
+  ['adTitle','adSubtitle','adImage','adLink'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('adFormTitle').textContent='Add '+zone[0].toUpperCase()+zone.slice(1)+' Ad';
+  openModal('adModal');
+}
+
+function editAd(zone,idx){
+  const ad=(getAds()[zone]||[])[idx];if(!ad)return;
+  document.getElementById('adZone').value=zone;document.getElementById('editAdId').value=idx;
+  document.getElementById('adTitle').value=ad.title||'';document.getElementById('adSubtitle').value=ad.subtitle||'';
+  document.getElementById('adImage').value=ad.image||'';document.getElementById('adLink').value=ad.link||'';
+  document.getElementById('adFormTitle').textContent='Edit '+zone[0].toUpperCase()+zone.slice(1)+' Ad';
+  openModal('adModal');
+}
+
+async function saveAd(){
+  const zone=v('adZone'),editIdx=v('editAdId');
+  const ad={title:v('adTitle'),subtitle:v('adSubtitle'),image:v('adImage'),link:v('adLink')};
+  const btn=document.getElementById('saveAdBtn');btn.innerHTML='Saving...<span class="spinner"></span>';btn.disabled=true;
+  const ads=JSON.parse(JSON.stringify(getAds()));
+  if(!ads[zone])ads[zone]=[];
+  if(editIdx!=='')ads[zone][parseInt(editIdx)]=ad;else ads[zone].push(ad);
+  const ok=await pushGist({...DB,ads});
+  btn.textContent='Save Ad';btn.disabled=false;
+  if(ok){closeModal('adModal');renderAllAdLists();showToast('Ad saved & synced!','success');}else showToast('Failed.','error');
+}
+
+async function deleteAd(zone,idx){
+  if(!confirm('Delete this ad?'))return;
+  const ads=JSON.parse(JSON.stringify(getAds()));ads[zone].splice(idx,1);
+  const ok=await pushGist({...DB,ads});
+  if(ok){renderAllAdLists();showToast('Ad removed.','success');}else showToast('Failed.','error');
+}
+
+// ══════ ADMINS ══════
+function getAdmins(){return DB&&DB.admins?DB.admins:[];}
+
+function renderAdminsList(){
+  if(!ME.isSuperAdmin){document.getElementById('adminManagePanel').style.display='none';document.getElementById('superadminOnlyMsg').style.display='block';return;}
+  document.getElementById('adminManagePanel').style.display='block';document.getElementById('superadminOnlyMsg').style.display='none';
+  const el=document.getElementById('adminsList');
+  el.innerHTML=getAdmins().map(a=>`
+    <div class="admin-row">
+      <div style="font-size:1.5rem;">👤</div>
+      <div style="flex:1;"><div style="font-weight:700;font-size:.9rem;">${esc(a.username)}</div><div style="font-size:.72rem;color:var(--cr-muted);">Added: ${fmtDate(a.createdAt)}</div></div>
+      ${a.isSuperAdmin?'<span class="superadmin-badge">Super Admin</span>':'<span class="badge" style="background:rgba(255,255,255,.05);border:1px solid var(--cr-border);color:var(--cr-muted);">Admin</span>'}
+      <div style="display:flex;gap:6px;">
+        <button class="btn-ghost" style="padding:5px 12px;font-size:.75rem;" onclick="editAdminModal('${a.id}')">Edit</button>
+        ${!a.isSuperAdmin?`<button class="btn-ghost" style="padding:5px 12px;font-size:.75rem;color:#ff4444;border-color:#ff4444;" onclick="deleteAdmin('${a.id}')">Remove</button>`:''}
+      </div>
+    </div>`).join('');
+}
+
+function openAdminForm(){
+  document.getElementById('editAdminId').value='';document.getElementById('adminUsername').value='';document.getElementById('adminPassword').value='';
+  document.getElementById('adminPwNote').style.display='none';document.getElementById('adminFormTitle').textContent='Add Admin';
+  openModal('adminModal');
+}
+
+function editAdminModal(id){
+  const a=getAdmins().find(x=>x.id===id);if(!a)return;
+  document.getElementById('editAdminId').value=id;document.getElementById('adminUsername').value=a.username;document.getElementById('adminPassword').value='';
+  document.getElementById('adminPwNote').style.display='inline';document.getElementById('adminFormTitle').textContent='Edit Admin';
+  openModal('adminModal');
+}
+
+async function saveAdmin(){
+  const editId=v('editAdminId'),username=v('adminUsername').toLowerCase(),pw=v('adminPassword');
+  if(!username){showToast('Username required.','error');return;}
+  if(!editId&&!pw){showToast('Password required for new admin.','error');return;}
+  const btn=document.getElementById('saveAdminBtn');btn.innerHTML='Saving...<span class="spinner"></span>';btn.disabled=true;
+  const admins=JSON.parse(JSON.stringify(getAdmins()));
+  if(editId){
+    const idx=admins.findIndex(a=>a.id===editId);
+    if(idx<0){showToast('Admin not found.','error');btn.textContent='Save Admin';btn.disabled=false;return;}
+    admins[idx].username=username;
+    if(pw)admins[idx].passwordHash=hashPassword(username,pw);
+    if(editId===ME.id){ME.username=username;saveSession(ME);document.getElementById('loggedAsLabel').textContent='👤 '+ME.username+(ME.isSuperAdmin?' (Super Admin)':'');document.getElementById('newUsername').value=username;}
+  } else {
+    if(admins.find(a=>a.username===username)){showToast('Username already exists.','error');btn.textContent='Save Admin';btn.disabled=false;return;}
+    admins.push({id:genId(),username,passwordHash:hashPassword(username,pw),isSuperAdmin:false,createdAt:new Date().toISOString()});
+  }
+  const ok=await pushGist({...DB,admins});
+  btn.textContent='Save Admin';btn.disabled=false;
+  if(ok){closeModal('adminModal');renderAdminsList();showToast(editId?'Admin updated!':'Admin added!','success');}else showToast('Failed.','error');
+}
+
+async function deleteAdmin(id){
+  const admin=getAdmins().find(a=>a.id===id);if(!admin)return;
+  if(admin.isSuperAdmin){showToast('Cannot remove Super Admin.','error');return;}
+  if(!confirm(`Remove admin "${admin.username}"?`))return;
+  const ok=await pushGist({...DB,admins:getAdmins().filter(a=>a.id!==id)});
+  if(ok){renderAdminsList();showToast('Admin removed.','success');}else showToast('Failed.','error');
+}
+
+// ══════ SETTINGS ══════
+async function saveSettings(){
+  const newUser=v('newUsername').toLowerCase(),newPw=v('newPassword'),conf=v('confirmPassword'),curPw=v('currentPasswordVerify');
+  if(!newUser){showToast('Username cannot be empty.','error');return;}
+  if(!curPw){showToast('Current password required.','error');return;}
+  if(newPw&&newPw!==conf){showToast('New passwords do not match.','error');return;}
+  const btn=document.getElementById('saveSettingsBtn');btn.innerHTML='Saving...<span class="spinner"></span>';btn.disabled=true;
+  const data=await fetchGist();
+  const me=data&&data.admins.find(a=>a.id===ME.id);
+  if(!me||me.passwordHash!==hashPassword(ME.username,curPw)){showToast('Current password incorrect.','error');btn.textContent='Save Changes';btn.disabled=false;return;}
+  const admins=JSON.parse(JSON.stringify(getAdmins()));
+  const idx=admins.findIndex(a=>a.id===ME.id);
+  admins[idx].username=newUser;if(newPw)admins[idx].passwordHash=hashPassword(newUser,newPw);
+  const ok=await pushGist({...DB,admins});
+  btn.textContent='Save Changes';btn.disabled=false;
+  if(ok){ME.username=newUser;saveSession(ME);document.getElementById('loggedAsLabel').textContent='👤 '+newUser+(ME.isSuperAdmin?' (Super Admin)':'');['newPassword','confirmPassword','currentPasswordVerify'].forEach(id=>document.getElementById(id).value='');showToast('Credentials updated!','success');}
+  else showToast('Failed to update.','error');
+}
+
+// ══════ SCHEDULED AUTO-PUBLISH ══════
+async function checkScheduled(){
+  if(!DB||!ME)return;
+  const now=new Date();let changed=false;
+  const articles=getArticles().map(a=>{if(a.status==='scheduled'&&a.scheduledAt&&new Date(a.scheduledAt)<=now){changed=true;return{...a,status:'published',published:true};}return a;});
+  if(changed){await pushGist({...DB,articles});renderArticlesList();showToast('Scheduled article(s) auto-published!','success');}
+}
+setInterval(checkScheduled,60000);
+
+// ══════ UTILS ══════
+function v(id){return(document.getElementById(id).value||'').trim();}
+function err(el,msg){el.textContent=msg;el.style.display='block';}
+function openModal(id){document.getElementById(id).style.display='block';}
+function closeModal(id){document.getElementById(id).style.display='none';}
+function esc(s){if(!s)return'';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function fmtDate(d){if(!d)return'';return new Date(d).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});}
+let _tt;
+function showToast(msg,type){const t=document.getElementById('toast');t.textContent=msg;t.className='toast show'+(type?' '+type:'');clearTimeout(_tt);_tt=setTimeout(()=>t.classList.remove('show'),3500);}
+['articleModal','adModal','adminModal'].forEach(id=>{document.getElementById(id).addEventListener('click',e=>{if(e.target===document.getElementById(id))closeModal(id);});});
+</script>
+</body>
+</html>
