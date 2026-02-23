@@ -185,7 +185,7 @@
 
 <script>
 // ══════ GIST ID – replaced by admin setup "Download Files" step ══════
-const SITE_GIST_ID = "__GIST_ID__";
+const SITE_GIST_ID = "d22d19c7957348ec27f14f57eec744b9";
 
 // ══════ THEME ══════
 let currentTheme=localStorage.getItem('cr_theme')||'system';
@@ -200,7 +200,7 @@ const PER_PAGE=10;
 
 async function loadData(){
   const loadMsg=document.getElementById('loadingMsg');
-  const gistId=(typeof SITE_GIST_ID!=='undefined'&&SITE_GIST_ID&&SITE_GIST_ID!=='__GIST_ID__')?SITE_GIST_ID:null;
+  const gistId=(typeof SITE_GIST_ID!=='undefined'&&SITE_GIST_ID&&SITE_GIST_ID!=='d22d19c7957348ec27f14f57eec744b9')?SITE_GIST_ID:null;
   if(!gistId){
     loadMsg.innerHTML='<span style="color:var(--cr-muted);font-family:Orbitron,monospace;font-size:.8rem">⚙️ Site not configured yet.</span>';
     return;
