@@ -51,6 +51,10 @@
     .sync-status.err{color:#ff4444;}
     .modal-backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:200;overflow-y:auto;padding:2rem 1rem;}
     .modal-box{background:var(--cr-card);border:1px solid var(--cr-red);border-radius:14px;max-width:620px;margin:0 auto;padding:2rem;position:relative;}
+    .ref-row{display:flex;gap:8px;margin-bottom:8px;align-items:center;}
+    .ref-row input{flex:1;}
+    .ref-row button{background:transparent;border:1px solid var(--cr-border);color:var(--cr-muted);width:32px;height:32px;border-radius:6px;cursor:pointer;font-size:1rem;transition:all .2s;}
+    .ref-row button:hover{border-color:var(--cr-red);color:var(--cr-red);}
   </style>
 </head>
 <body>
@@ -191,8 +195,18 @@
         <div class="field"><label>New Password</label><input type="password" id="newPassword" placeholder="Leave blank to keep current" /></div>
         <div class="field"><label>Confirm New Password</label><input type="password" id="confirmPassword" /></div>
         <div class="field"><label>Current Password (required to confirm)</label><input type="password" id="currentPasswordVerify" /></div>
-        <div class="field"><label>Admin Panel Shortcut</label><input type="text" id="adminShortcut" placeholder="e.g. ctrl+alt+a" /></div>
-        <p style="font-size:.75rem;color:var(--cr-muted);margin-bottom:1rem;">Customize the key combination to open the admin panel from the public site. Use lower-case names separated by "+" (e.g. <code>ctrl+shift+x</code>). Leave blank to use the default (ctrl+alt+a).</p>
+
+        <!-- Admin Shortcut Setting -->
+        <div class="field">
+          <label>Admin Panel Shortcut</label>
+          <p style="font-size:.7rem;color:var(--cr-muted);margin-bottom:4px;">Press keys (e.g., Ctrl+Alt+A) then click Set</p>
+          <div style="display:flex;gap:8px;">
+            <input type="text" id="shortcutDisplay" readonly placeholder="Press keys" value="Ctrl+Alt+A" style="flex:1;" />
+            <button class="btn-red" id="captureShortcutBtn" onclick="startCaptureShortcut()">Set</button>
+            <button class="btn-ghost" id="resetShortcutBtn" onclick="resetShortcut()">Reset</button>
+          </div>
+        </div>
+
         <button class="btn-red" id="saveSettingsBtn" onclick="saveSettings()">Save Changes</button>
       </div>
     </div>
@@ -209,12 +223,14 @@
     <div class="field"><label>Description *</label><textarea id="artDesc" rows="6" placeholder="Full details..."></textarea></div>
     <div class="field"><label>Cover Image URL</label><input type="url" id="artImage" /></div>
     <div class="field"><label>YouTube Video URL or ID</label><input type="text" id="artYt" /></div>
-    <!-- Referral Links: allow admins to specify one or more referral links for the airdrop -->
+
+    <!-- Referral Links Section -->
     <div class="field">
-      <label>Referral Links</label>
+      <label>Referral Links (optional)</label>
       <div id="refLinksContainer"></div>
-      <button type="button" class="btn-ghost" style="font-size:.75rem;margin-top:.5rem;" onclick="addRefLinkRow()">+ Add Link</button>
+      <button type="button" class="btn-ghost" style="margin-top:6px;" onclick="addRefLinkField()">+ Add Referral Link</button>
     </div>
+
     <div class="field">
       <label>Status</label>
       <select id="artStatus" onchange="document.getElementById('scheduleField').style.display=this.value==='scheduled'?'block':'none'">
@@ -277,20 +293,16 @@ function hashPassword(u,p){const s1=crHash(_P+'|'+u.toLowerCase()+'|'+p);const s
 function genId(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7);}
 
 // ══════ CONFIG ══════
-// Gist token stored locally (secret). Gist ID comes from site-config.json (public, in repo).
 const CFG_KEY='cr_gist_config';
 function getLocalCfg(){try{return JSON.parse(localStorage.getItem(CFG_KEY)||'null');}catch{return null;}}
 function saveLocalCfg(c){if(c)localStorage.setItem(CFG_KEY,JSON.stringify(c));else localStorage.removeItem(CFG_KEY);}
 
-// Cache of the public gist ID loaded from site-config.json
 let _cachedGistId=null;
 
 async function getGistId(){
   if(_cachedGistId)return _cachedGistId;
-  // 1. Check localStorage (admin's own browser, or previously loaded)
   const loc=getLocalCfg();
   if(loc&&loc.gistId){_cachedGistId=loc.gistId;return _cachedGistId;}
-  // 2. Fetch from site-config.json in the repo (works for all browsers after setup)
   try{
     const r=await fetch('site-config.json?t='+Date.now(),{cache:'no-store'});
     if(r.ok){const d=await r.json();if(d.gistId){_cachedGistId=d.gistId;return _cachedGistId;}}
@@ -300,8 +312,6 @@ async function getGistId(){
 
 function getToken(){const c=getLocalCfg();return c?c.token:null;}
 
-// ══════ WRITE SITE-CONFIG.JSON TO REPO ══════
-// This is what makes the Gist ID public so every browser can find it.
 async function writeSiteConfig(gistId,token,owner,repo){
   try{
     let sha=null;
@@ -366,7 +376,6 @@ function clearSession(){sessionStorage.removeItem(SESS_KEY);ME=null;}
 
 // ══════ INIT ══════
 (async function init(){
-  // Show spinner while loading
   document.body.insertAdjacentHTML('afterbegin',
     '<div id="initLoader" style="position:fixed;inset:0;background:#0a0a0a;display:flex;align-items:center;justify-content:center;z-index:9999;flex-direction:column;gap:1rem;">'
     +'<div style="font-family:Orbitron,monospace;font-size:1.3rem;font-weight:900;color:#ff0000;letter-spacing:2px;">CR<span style=\'color:#f0f0f0\'>Earnings</span></div>'
@@ -380,19 +389,15 @@ function clearSession(){sessionStorage.removeItem(SESS_KEY);ME=null;}
     const gistId=await getGistId();
 
     if(gistId){
-      // Gist ID known - check if admins exist
       const data=await fetchGist();
       if(data&&data.admins&&data.admins.length>0){
-        // Fully configured - login or dashboard
         const s=getSession();
         if(s){ME=s;hideLoader();await showDashboard();return;}
         hideLoader();showScreen('loginScreen');return;
       }
-      // Gist ID known but no admins yet - show setup to finish
       hideLoader();showScreen('setupScreen');return;
     }
 
-    // No gist ID at all - brand new install
     hideLoader();showScreen('setupScreen');
 
   }catch(e){
@@ -425,11 +430,9 @@ async function doSetup(){
 
   const btn=document.getElementById('setupBtn');btn.innerHTML='Setting up...<span class="spinner"></span>';btn.disabled=true;
 
-  // Save locally so fetchGist works
   saveLocalCfg({gistId,token});
   _cachedGistId=gistId;
 
-  // Connect to gist
   const existing=await fetchGist();
   if(!existing){
     saveLocalCfg(null);_cachedGistId=null;
@@ -442,13 +445,11 @@ async function doSetup(){
     btn.textContent='Complete Setup';btn.disabled=false;return;
   }
 
-  // Create super admin and save to gist
   const superAdmin={id:genId(),username,passwordHash:hashPassword(username,pw),isSuperAdmin:true,createdAt:new Date().toISOString()};
   const initData={articles:[],ads:{left:[],right:[],bottom:[]},admins:[superAdmin]};
   const ok=await pushGist(initData);
   if(!ok){err(errEl,'Cannot write to Gist. Check token has gist scope.');btn.textContent='Complete Setup';btn.disabled=false;return;}
 
-  // Write site-config.json to repo so ALL visitors can find the Gist ID
   btn.innerHTML='Writing config...<span class="spinner"></span>';
   const cfgOk=await writeSiteConfig(gistId,token,owner,repo);
   if(!cfgOk){
@@ -469,7 +470,6 @@ async function doLogin(){
 
   const btn=document.getElementById('loginBtn');btn.innerHTML='Checking...<span class="spinner"></span>';btn.disabled=true;
 
-  // If user entered a token on this new device, save it first
   const enteredToken=(document.getElementById('loginToken').value||'').trim();
   if(enteredToken){
     const gId=await getGistId();
@@ -496,13 +496,13 @@ async function showDashboard(){
   showScreen('adminDashboard');
   document.getElementById('loggedAsLabel').textContent='👤 '+ME.username+(ME.isSuperAdmin?' (Super Admin)':'');
   document.getElementById('newUsername').value=ME.username;
-  // Load custom shortcut from localStorage (if any)
-  const sc=localStorage.getItem('cr_admin_shortcut')||'';
-  const scInput=document.getElementById('adminShortcut');
-  if(scInput) scInput.value=sc;
   if(!ME.isSuperAdmin)document.getElementById('tab-admins').style.display='none';
   if(!getToken())setSyncStatus('err','⚠ Read-only – enter token to write');
   await syncFromGist(false);
+
+  // Load saved shortcut
+  const savedShortcut = localStorage.getItem('cr_admin_shortcut') || 'ctrl+alt+a';
+  document.getElementById('shortcutDisplay').value = formatShortcut(savedShortcut);
 }
 
 // ══════ TABS ══════
@@ -537,6 +537,31 @@ function renderArticlesList(){
       </div></div>`;
   }).join('');
 }
+
+// Referral Links handling
+function addRefLinkField(name = '', url = '') {
+  const container = document.getElementById('refLinksContainer');
+  const div = document.createElement('div');
+  div.className = 'ref-row';
+  div.innerHTML = `
+    <input type="text" placeholder="Name (e.g. Binance)" value="${esc(name)}" class="ref-name">
+    <input type="url" placeholder="URL" value="${esc(url)}" class="ref-url">
+    <button onclick="this.parentElement.remove()">✕</button>
+  `;
+  container.appendChild(div);
+}
+
+function collectRefLinks() {
+  const rows = document.querySelectorAll('#refLinksContainer .ref-row');
+  const refs = [];
+  rows.forEach(row => {
+    const name = row.querySelector('.ref-name').value.trim();
+    const url = row.querySelector('.ref-url').value.trim();
+    if (name && url) refs.push({ name, url });
+  });
+  return refs;
+}
+
 function openArticleForm(){
   document.getElementById('editId').value='';
   ['artTitle','artImage','artYt'].forEach(id=>document.getElementById(id).value='');
@@ -544,12 +569,11 @@ function openArticleForm(){
   document.getElementById('artStatus').value='published';
   document.getElementById('scheduleField').style.display='none';
   document.getElementById('articleFormTitle').textContent='Add New Airdrop';
-
-  // Clear referral links container and add one empty row
-  const rl=document.getElementById('refLinksContainer');
-  if(rl){rl.innerHTML='';addRefLinkRow();}
+  // Clear ref links
+  document.getElementById('refLinksContainer').innerHTML = '';
   openModal('articleModal');
 }
+
 function editArticle(id){
   const a=getArticles().find(x=>x.id===id);if(!a)return;
   document.getElementById('editId').value=id;
@@ -563,15 +587,16 @@ function editArticle(id){
   if(a.scheduledAt){const d=new Date(a.scheduledAt);document.getElementById('artSchedule').value=new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,16);}
   document.getElementById('articleFormTitle').textContent='Edit Airdrop';
 
-  // Populate referral links
-  const rl=document.getElementById('refLinksContainer');
-  if(rl){rl.innerHTML='';
-    const refs = Array.isArray(a.refLinks)? a.refLinks : [];
-    if(refs.length){refs.forEach(r=>{const name=(typeof r==='string'?'':r.name||'');const url=(typeof r==='string'?r:(r.url||''));addRefLinkRow(name||'',url||'');});}
-    else {addRefLinkRow();}
+  // Populate ref links
+  const container = document.getElementById('refLinksContainer');
+  container.innerHTML = '';
+  if (a.refLinks && Array.isArray(a.refLinks)) {
+    a.refLinks.forEach(r => addRefLinkField(r.name, r.url));
   }
+
   openModal('articleModal');
 }
+
 async function saveArticle(){
   const title=v('artTitle'),desc=v('artDesc');
   if(!title||!desc){showToast('Title and description required!','error');return;}
@@ -582,25 +607,26 @@ async function saveArticle(){
   const id=v('editId')||genId();
   const all=getArticles();
   const idx=all.findIndex(a=>a.id===id);
-  // Gather referral links
-  const refLinks=[];
-  const rl=document.getElementById('refLinksContainer');
-  if(rl){
-    Array.from(rl.querySelectorAll('.ref-link-row')).forEach(row=>{
-      const name=row.querySelector('.refName').value.trim();
-      const url=row.querySelector('.refUrl').value.trim();
-      if(url){
-        if(name) refLinks.push({name,url}); else refLinks.push({url});
-      }
-    });
-  }
-  const article={id,title,description:desc,image:v('artImage'),ytVideoId:v('artYt'),status,scheduledAt,published:status==='published',addedBy:ME.username,date:idx>=0?all[idx].date:new Date().toISOString(),refLinks};
+  const article={
+    id,
+    title,
+    description:desc,
+    image:v('artImage'),
+    ytVideoId:v('artYt'),
+    refLinks: collectRefLinks(),
+    status,
+    scheduledAt,
+    published:status==='published',
+    addedBy:ME.username,
+    date:idx>=0?all[idx].date:new Date().toISOString()
+  };
   if(idx>=0)all[idx]=article;else all.push(article);
   const ok=await pushGist({...DB,articles:all});
   btn.textContent='Save Airdrop';btn.disabled=false;
   if(ok){closeModal('articleModal');renderArticlesList();showToast(idx>=0?'Updated!':'Published!','success');}
   else showToast('Failed. Check you have write token.','error');
 }
+
 async function deleteArticle(id){
   if(!confirm('Delete this airdrop?'))return;
   const ok=await pushGist({...DB,articles:getArticles().filter(a=>a.id!==id)});
@@ -670,66 +696,6 @@ async function deleteAdmin(id){
   if(ok){renderAdminsList();showToast('Removed.','success');}else showToast('Failed.','error');
 }
 
-// ══════ REFERRAL LINKS UI ══════
-// Functions to dynamically add and remove referral link rows in the article form.
-function addRefLinkRow(name='',url=''){
-  const container=document.getElementById('refLinksContainer');
-  if(!container)return;
-  const row=document.createElement('div');
-  row.className='ref-link-row';
-  row.style.display='flex';
-  row.style.gap='0.5rem';
-  row.style.marginBottom='0.5rem';
-  // Name input (optional)
-  const nameInput=document.createElement('input');
-  nameInput.type='text';
-  nameInput.className='refName';
-  nameInput.placeholder='Name (optional)';
-  nameInput.value=name;
-  nameInput.style.flex='1';
-  nameInput.style.minWidth='0';
-  nameInput.style.background='#1a1a1a';
-  nameInput.style.border='1px solid var(--cr-border)';
-  nameInput.style.color='var(--cr-text)';
-  nameInput.style.borderRadius='6px';
-  nameInput.style.padding='8px 12px';
-  nameInput.style.fontSize='0.85rem';
-  // URL input
-  const urlInput=document.createElement('input');
-  urlInput.type='url';
-  urlInput.className='refUrl';
-  urlInput.placeholder='URL';
-  urlInput.value=url;
-  urlInput.style.flex='1';
-  urlInput.style.minWidth='0';
-  urlInput.style.background='#1a1a1a';
-  urlInput.style.border='1px solid var(--cr-border)';
-  urlInput.style.color='var(--cr-text)';
-  urlInput.style.borderRadius='6px';
-  urlInput.style.padding='8px 12px';
-  urlInput.style.fontSize='0.85rem';
-  // Remove button
-  const removeBtn=document.createElement('button');
-  removeBtn.type='button';
-  removeBtn.textContent='✕';
-  removeBtn.onclick=function(){removeRefLinkRow(row);};
-  removeBtn.className='btn-ghost';
-  removeBtn.style.padding='0 10px';
-  removeBtn.style.fontSize='0.9rem';
-  row.appendChild(nameInput);
-  row.appendChild(urlInput);
-  row.appendChild(removeBtn);
-  container.appendChild(row);
-}
-function removeRefLinkRow(row){
-  row.remove();
-  const container=document.getElementById('refLinksContainer');
-  if(container&&container.children.length===0){
-    // Always keep at least one empty row for convenience
-    addRefLinkRow();
-  }
-}
-
 // ══════ SETTINGS ══════
 async function saveSettings(){
   const newUser=v('newUsername').toLowerCase(),newPw=v('newPassword'),conf=v('confirmPassword'),curPw=v('currentPasswordVerify');
@@ -744,17 +710,44 @@ async function saveSettings(){
   admins[idx].username=newUser;if(newPw)admins[idx].passwordHash=hashPassword(newUser,newPw);
   const ok=await pushGist({...DB,admins});
   btn.textContent='Save Changes';btn.disabled=false;
-  if(ok){
-    // Update session username locally
-    ME.username=newUser;saveSession(ME);
-    document.getElementById('loggedAsLabel').textContent='👤 '+newUser+(ME.isSuperAdmin?' (Super Admin)':'');
-    ['newPassword','confirmPassword','currentPasswordVerify'].forEach(id=>document.getElementById(id).value='');
-    // Store admin shortcut locally
-    const sc=(v('adminShortcut')||'').toLowerCase();
-    if(sc) localStorage.setItem('cr_admin_shortcut',sc); else localStorage.removeItem('cr_admin_shortcut');
-    showToast('Updated!','success');
-  }
+  if(ok){ME.username=newUser;saveSession(ME);document.getElementById('loggedAsLabel').textContent='👤 '+newUser+(ME.isSuperAdmin?' (Super Admin)':'');['newPassword','confirmPassword','currentPasswordVerify'].forEach(id=>document.getElementById(id).value='');showToast('Updated!','success');}
   else showToast('Failed.','error');
+}
+
+// ══════ SHORTCUT CAPTURE ══════
+let capturing = false;
+function startCaptureShortcut() {
+  capturing = true;
+  document.getElementById('shortcutDisplay').value = 'Press keys...';
+  document.addEventListener('keydown', captureHandler);
+}
+function captureHandler(e) {
+  if (!capturing) return;
+  e.preventDefault();
+  const keys = [];
+  if (e.ctrlKey) keys.push('ctrl');
+  if (e.altKey) keys.push('alt');
+  if (e.shiftKey) keys.push('shift');
+  if (e.metaKey) keys.push('meta');
+  if (e.key && !['Control','Alt','Shift','Meta'].includes(e.key)) {
+    keys.push(e.key.toLowerCase());
+  }
+  if (keys.length) {
+    const shortcut = keys.join('+');
+    localStorage.setItem('cr_admin_shortcut', shortcut);
+    document.getElementById('shortcutDisplay').value = formatShortcut(shortcut);
+    capturing = false;
+    document.removeEventListener('keydown', captureHandler);
+    showToast('Shortcut saved!', 'success');
+  }
+}
+function resetShortcut() {
+  localStorage.setItem('cr_admin_shortcut', 'ctrl+alt+a');
+  document.getElementById('shortcutDisplay').value = 'Ctrl+Alt+A';
+  showToast('Reset to default', 'success');
+}
+function formatShortcut(s) {
+  return s.split('+').map(part => part.charAt(0).toUpperCase() + part.slice(1)).join('+');
 }
 
 // ══════ SCHEDULED AUTO-PUBLISH ══════

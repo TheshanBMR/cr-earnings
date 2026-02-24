@@ -79,6 +79,9 @@
     .popup-video iframe{width:100%;height:280px;border-radius:10px;border:1px solid var(--cr-border);}
     .popup-yt-btn{display:inline-flex;align-items:center;gap:6px;margin-top:.75rem;background:#ff0000;color:#fff;padding:8px 18px;border-radius:6px;font-size:.8rem;font-weight:700;text-decoration:none;transition:opacity .2s;font-family:'Exo 2',sans-serif;}
     .popup-yt-btn:hover{opacity:.85;}
+    .ref-links{margin-top:1.5rem;}
+    .ref-links-title{font-family:'Orbitron',monospace;font-size:.8rem;color:var(--cr-red);margin-bottom:.5rem;display:flex;align-items:center;gap:6px;}
+    .ref-links a{display:inline-block;margin-right:8px;margin-bottom:8px;}
     footer{grid-column:1/-1;background:var(--cr-card);border-top:2px solid var(--cr-red);padding:3rem 2rem 90px;}
     .footer-inner{max-width:900px;margin:0 auto;display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:2rem;}
     .footer-brand .logo{display:inline-block;margin-bottom:.75rem;}
@@ -192,19 +195,14 @@ window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change',appl
 setTheme(currentTheme);
 
 // ══════ DATA ══════
-// Gist ID is fetched from site-config.json which lives in the repo.
-// This file is written automatically by admin.html during setup.
-// ALL visitors (any browser, any device) can read it because it's a public repo file.
 let allArticles=[],allAds={left:[],right:[],bottom:[]},currentPage=1;
 const PER_PAGE=10;
 
 async function getGistId(){
-  // Try site-config.json first (the correct way, works for everyone)
   try{
     const r=await fetch('site-config.json?t='+Date.now(),{cache:'no-store'});
     if(r.ok){const d=await r.json();if(d&&d.gistId)return d.gistId;}
   }catch(e){}
-  // Fallback: localStorage (only works on admin's own browser, kept for compatibility)
   try{
     const c=JSON.parse(localStorage.getItem('cr_gist_config')||'null');
     if(c&&c.gistId)return c.gistId;
@@ -270,20 +268,18 @@ function openPopup(id){
   const imgHtml=item.image?`<img class="popup-img" src="${esc(item.image)}" onerror="this.outerHTML='<div class=popup-img-placeholder>🪂</div>'">`:'<div class="popup-img-placeholder">🪂</div>';
   let vid='';
   if(item.ytVideoId){const y=ytId(item.ytVideoId);if(y)vid=`<div class="popup-video"><iframe src="https://www.youtube.com/embed/${y}" frameborder="0" allowfullscreen></iframe><a href="https://www.youtube.com/watch?v=${y}" target="_blank" class="popup-yt-btn">▶ Watch on YouTube</a></div>`;}
-  // Build referral links section if present
-  let refsHtml='';
-  if(Array.isArray(item.refLinks)&&item.refLinks.length){
-    refsHtml='<div style="margin-top:1rem;"><div style="font-family:Orbitron,monospace;font-size:.75rem;letter-spacing:1px;color:var(--cr-red);text-transform:uppercase;margin-bottom:.5rem;">Referral Links</div>'+
-      item.refLinks.map((r,i)=>{
-        // Each r may be a string or object with name/url. Fallback to string as URL.
-        let name='',url='';
-        if(typeof r==='string'){url=esc(r);name='Link '+(i+1);} else {url=esc(r.url||'');name=esc(r.name||('Link '+(i+1)));}
-        if(!url) return '';
-        return `<a href="${url}" target="_blank" style="color:var(--cr-red);text-decoration:underline;font-size:.85rem;display:block;margin-bottom:.3rem;">${name}</a>`;
-      }).join('')+
-      '</div>';
+
+  // Referral links
+  let refHtml = '';
+  if (item.refLinks && item.refLinks.length) {
+    refHtml = '<div class="ref-links"><div class="ref-links-title">🔗 Referral Links</div>';
+    item.refLinks.forEach(r => {
+      refHtml += `<a href="${esc(r.url)}" target="_blank" class="popup-yt-btn" style="margin-right:8px;margin-bottom:8px;">${esc(r.name || 'Link')}</a>`;
+    });
+    refHtml += '</div>';
   }
-  document.getElementById('popupInner').innerHTML=`${imgHtml}<div class="popup-content"><div class="popup-title">${esc(item.title)}</div><div class="popup-meta">Posted: ${fmtDate(item.date)}</div><div class="popup-desc">${esc(item.description)}</div>${refsHtml}${vid}</div>`;
+
+  document.getElementById('popupInner').innerHTML=`${imgHtml}<div class="popup-content"><div class="popup-title">${esc(item.title)}</div><div class="popup-meta">Posted: ${fmtDate(item.date)}</div><div class="popup-desc">${esc(item.description)}</div>${refHtml}${vid}</div>`;
   document.getElementById('popupOverlay').classList.add('open');
   document.body.style.overflow='hidden';
 }
@@ -306,6 +302,23 @@ function renderBottom(list){
   c.innerHTML=list.slice(0,4).map(a=>`<a class="bottom-ad-item" href="${esc(a.link||'#')}" target="_blank">${a.image?`<img src="${esc(a.image)}" alt="ad"/>`:''}${a.title?`<div class="bottom-ad-text"><strong>${esc(a.title)}</strong><small>${esc(a.subtitle||'Sponsored')}</small></div>`:''}</a>`).join('');
 }
 
+// ══════ ADMIN SHORTCUT ══════
+document.addEventListener('keydown', function(e) {
+  const saved = localStorage.getItem('cr_admin_shortcut') || 'ctrl+alt+a';
+  const parts = saved.toLowerCase().split('+');
+  let match = true;
+  if (parts.includes('ctrl') && !e.ctrlKey) match = false;
+  if (parts.includes('alt') && !e.altKey) match = false;
+  if (parts.includes('shift') && !e.shiftKey) match = false;
+  if (parts.includes('meta') && !e.metaKey) match = false;
+  const key = parts.filter(p => !['ctrl','alt','shift','meta'].includes(p)).pop() || '';
+  if (key && e.key.toLowerCase() !== key) match = false;
+  if (match) {
+    e.preventDefault();
+    window.location.href = 'admin.html';
+  }
+});
+
 // ══════ UTILS ══════
 function esc(s){if(!s)return'';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
 function fmtDate(d){if(!d)return'';return new Date(d).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});}
@@ -313,32 +326,6 @@ function ytId(v){if(!v)return null;const m=v.match(/(?:v=|youtu\.be\/|embed\/)([
 
 loadData();
 setInterval(loadData,5*60*1000);
-
-// ══════ ADMIN SHORTCUT ══════
-// Allow admins to quickly open the admin panel using a custom shortcut stored in localStorage.
-// The default combination is Ctrl+Alt+A. Admins can override this via the settings page in admin panel.
-function getAdminShortcut(){
-  // retrieve stored shortcut string; default to 'ctrl+alt+a'
-  const s=localStorage.getItem('cr_admin_shortcut');
-  return s?s.toLowerCase(): 'ctrl+alt+a';
-}
-document.addEventListener('keydown',e=>{
-  // Build a normalized combo string from pressed modifiers and key
-  const parts=[];
-  if(e.ctrlKey) parts.push('ctrl');
-  if(e.altKey) parts.push('alt');
-  if(e.shiftKey) parts.push('shift');
-  if(e.metaKey) parts.push('meta');
-  // Include the actual key if it's not just a modifier
-  const k=e.key.toLowerCase();
-  if(!['control','alt','shift','meta'].includes(k)) parts.push(k);
-  const combo=parts.join('+');
-  if(combo===getAdminShortcut()){
-    e.preventDefault();
-    // Redirect to the admin page. Use encoded filename to support spaces.
-    window.location.href='admin.html';
-  }
-});
 </script>
 </body>
 </html>
