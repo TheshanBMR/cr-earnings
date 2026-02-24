@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>CR Earnings – Crypto Airdrop Alerts</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="icon" type="image/x-icon" href="./assets/icon.ico">
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Exo+2:wght@300;400;600;700&display=swap" rel="stylesheet" />
   <style>
     :root{--cr-red:#ff0000;--cr-dark:#0a0a0a;--cr-card:#111111;--cr-border:#2a2a2a;--cr-text:#f0f0f0;--cr-muted:#888888;--cr-accent:#ff3333;--cr-glow:rgba(255,0,0,0.3);}
@@ -269,7 +270,20 @@ function openPopup(id){
   const imgHtml=item.image?`<img class="popup-img" src="${esc(item.image)}" onerror="this.outerHTML='<div class=popup-img-placeholder>🪂</div>'">`:'<div class="popup-img-placeholder">🪂</div>';
   let vid='';
   if(item.ytVideoId){const y=ytId(item.ytVideoId);if(y)vid=`<div class="popup-video"><iframe src="https://www.youtube.com/embed/${y}" frameborder="0" allowfullscreen></iframe><a href="https://www.youtube.com/watch?v=${y}" target="_blank" class="popup-yt-btn">▶ Watch on YouTube</a></div>`;}
-  document.getElementById('popupInner').innerHTML=`${imgHtml}<div class="popup-content"><div class="popup-title">${esc(item.title)}</div><div class="popup-meta">Posted: ${fmtDate(item.date)}</div><div class="popup-desc">${esc(item.description)}</div>${vid}</div>`;
+  // Build referral links section if present
+  let refsHtml='';
+  if(Array.isArray(item.refLinks)&&item.refLinks.length){
+    refsHtml='<div style="margin-top:1rem;"><div style="font-family:Orbitron,monospace;font-size:.75rem;letter-spacing:1px;color:var(--cr-red);text-transform:uppercase;margin-bottom:.5rem;">Referral Links</div>'+
+      item.refLinks.map((r,i)=>{
+        // Each r may be a string or object with name/url. Fallback to string as URL.
+        let name='',url='';
+        if(typeof r==='string'){url=esc(r);name='Link '+(i+1);} else {url=esc(r.url||'');name=esc(r.name||('Link '+(i+1)));}
+        if(!url) return '';
+        return `<a href="${url}" target="_blank" style="color:var(--cr-red);text-decoration:underline;font-size:.85rem;display:block;margin-bottom:.3rem;">${name}</a>`;
+      }).join('')+
+      '</div>';
+  }
+  document.getElementById('popupInner').innerHTML=`${imgHtml}<div class="popup-content"><div class="popup-title">${esc(item.title)}</div><div class="popup-meta">Posted: ${fmtDate(item.date)}</div><div class="popup-desc">${esc(item.description)}</div>${refsHtml}${vid}</div>`;
   document.getElementById('popupOverlay').classList.add('open');
   document.body.style.overflow='hidden';
 }
@@ -299,6 +313,32 @@ function ytId(v){if(!v)return null;const m=v.match(/(?:v=|youtu\.be\/|embed\/)([
 
 loadData();
 setInterval(loadData,5*60*1000);
+
+// ══════ ADMIN SHORTCUT ══════
+// Allow admins to quickly open the admin panel using a custom shortcut stored in localStorage.
+// The default combination is Ctrl+Alt+A. Admins can override this via the settings page in admin panel.
+function getAdminShortcut(){
+  // retrieve stored shortcut string; default to 'ctrl+alt+a'
+  const s=localStorage.getItem('cr_admin_shortcut');
+  return s?s.toLowerCase(): 'ctrl+alt+a';
+}
+document.addEventListener('keydown',e=>{
+  // Build a normalized combo string from pressed modifiers and key
+  const parts=[];
+  if(e.ctrlKey) parts.push('ctrl');
+  if(e.altKey) parts.push('alt');
+  if(e.shiftKey) parts.push('shift');
+  if(e.metaKey) parts.push('meta');
+  // Include the actual key if it's not just a modifier
+  const k=e.key.toLowerCase();
+  if(!['control','alt','shift','meta'].includes(k)) parts.push(k);
+  const combo=parts.join('+');
+  if(combo===getAdminShortcut()){
+    e.preventDefault();
+    // Redirect to the admin page. Use encoded filename to support spaces.
+    window.location.href='admin.html';
+  }
+});
 </script>
 </body>
 </html>
