@@ -55,6 +55,13 @@
     .ref-row input{flex:1;}
     .ref-row button{background:transparent;border:1px solid var(--cr-border);color:var(--cr-muted);width:32px;height:32px;border-radius:6px;cursor:pointer;font-size:1rem;transition:all .2s;}
     .ref-row button:hover{border-color:var(--cr-red);color:var(--cr-red);}
+    @media(max-width:700px){
+      #statsKpis{grid-template-columns:repeat(3,1fr)!important;}
+      #tabStats>div:nth-child(3),#tabStats>div:nth-child(4){grid-template-columns:1fr!important;}
+    }
+    @media(max-width:450px){
+      #statsKpis{grid-template-columns:repeat(2,1fr)!important;}
+    }
   </style>
 </head>
 <body>
@@ -104,21 +111,21 @@
     <div class="panel">
       <div class="field"><label>Username</label><input type="text" id="loginUsername" autocomplete="off" /></div>
       <div class="field"><label>Password</label><input type="password" id="loginPassword" /></div>
-      <div id="loginTokenWrap" style="display:none;">
-        <div class="info-box" style="font-size:.78rem;margin-bottom:.75rem;">
-          First time on this device – enter your GitHub token so you can write articles.<br/>
-          <small style="opacity:.7;">Your token is only saved on this browser, never shared.</small>
+      <div id="loginTokenWrap">
+        <div class="field">
+          <label style="display:flex;align-items:center;justify-content:space-between;">
+            <span>GitHub Token <span id="tokenRequiredBadge" style="display:none;color:#ff4444;font-size:.7rem;font-weight:700;">● Required to save changes</span></span>
+            <span id="tokenSavedBadge" style="color:#00cc44;font-size:.7rem;display:none;">✔ Token saved</span>
+          </label>
+          <input type="password" id="loginToken" placeholder="ghp_xxxxxxxxxxxx" />
+          <div style="font-size:.68rem;color:var(--cr-muted);margin-top:4px;">Needed to add/edit content. Saved in this browser only.</div>
         </div>
-        <div class="field"><label>GitHub Token (ghp_...)</label><input type="password" id="loginToken" placeholder="ghp_xxxxxxxxxxxx" /></div>
       </div>
       <div id="loginError" style="color:#ff4444;font-size:.8rem;margin-bottom:.75rem;display:none;"></div>
       <button class="btn-red" style="width:100%;" id="loginBtn" onclick="doLogin()">Login</button>
-      <p style="text-align:center;margin-top:.75rem;">
-        <button onclick="toggleTokenField()" style="background:none;border:none;color:var(--cr-muted);font-size:.72rem;cursor:pointer;text-decoration:underline;">New device? Enter token</button>
-      </p>
     </div>
     <p style="text-align:center;font-size:.7rem;color:var(--cr-muted);margin-top:1rem;">
-      <a href="index.html" style="color:var(--cr-muted);">← Back to Site</a>
+      <a href="./" style="color:var(--cr-muted);">← Back to Site</a>
     </p>
   </div>
 </div>
@@ -141,6 +148,7 @@
     <button class="tab-btn active" id="tab-articles" onclick="switchTab('articles')">📰 Articles</button>
     <button class="tab-btn" id="tab-ads" onclick="switchTab('ads')">📢 Ads</button>
     <button class="tab-btn" id="tab-admins" onclick="switchTab('admins')">👥 Admins</button>
+    <button class="tab-btn" id="tab-stats" onclick="switchTab('stats')">📊 Statistics</button>
     <button class="tab-btn" id="tab-settings" onclick="switchTab('settings')">⚙️ Settings</button>
   </div>
 
@@ -184,6 +192,58 @@
           <button class="btn-red" onclick="openAdminForm()">+ Add Admin</button>
         </div>
         <div id="adminsList"></div>
+      </div>
+    </div>
+
+
+    <div id="tabStats" style="display:none;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;flex-wrap:wrap;gap:1rem;">
+        <div class="section-title" style="margin:0;">Site Statistics</div>
+        <div style="display:flex;gap:.5rem;align-items:center;">
+          <select id="statsDays" onchange="renderStats()" style="background:#1a1a1a;border:1px solid var(--cr-border);color:var(--cr-text);border-radius:6px;padding:6px 10px;font-size:.8rem;font-family:'Exo 2',sans-serif;">
+            <option value="7">Last 7 days</option>
+            <option value="14">Last 14 days</option>
+            <option value="30" selected>Last 30 days</option>
+          </select>
+          <button class="btn-ghost" style="font-size:.75rem;" onclick="syncFromGist(false).then(renderStats)">🔄 Refresh</button>
+        </div>
+      </div>
+
+      <!-- KPI Cards -->
+      <div id="statsKpis" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1rem;margin-bottom:1.5rem;"></div>
+
+      <!-- Charts row -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem;">
+        <div class="panel">
+          <div style="font-family:'Orbitron',monospace;font-size:.75rem;color:var(--cr-red);letter-spacing:1px;margin-bottom:1rem;">DAILY TRAFFIC</div>
+          <canvas id="chartDaily" height="180"></canvas>
+        </div>
+        <div class="panel">
+          <div style="font-family:'Orbitron',monospace;font-size:.75rem;color:var(--cr-red);letter-spacing:1px;margin-bottom:1rem;">TRAFFIC BY HOUR</div>
+          <canvas id="chartHourly" height="180"></canvas>
+        </div>
+      </div>
+
+      <!-- Devices + Sources + Top Articles -->
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;margin-bottom:1rem;">
+        <div class="panel">
+          <div style="font-family:'Orbitron',monospace;font-size:.75rem;color:var(--cr-red);letter-spacing:1px;margin-bottom:1rem;">DEVICES</div>
+          <canvas id="chartDevices" height="160"></canvas>
+          <div id="deviceLegend" style="margin-top:.75rem;font-size:.75rem;"></div>
+        </div>
+        <div class="panel">
+          <div style="font-family:'Orbitron',monospace;font-size:.75rem;color:var(--cr-red);letter-spacing:1px;margin-bottom:1rem;">TRAFFIC SOURCES</div>
+          <canvas id="chartSources" height="160"></canvas>
+          <div id="sourceLegend" style="margin-top:.75rem;font-size:.75rem;"></div>
+        </div>
+        <div class="panel">
+          <div style="font-family:'Orbitron',monospace;font-size:.75rem;color:var(--cr-red);letter-spacing:1px;margin-bottom:1rem;">TOP AIRDROPS</div>
+          <div id="topArticlesStats" style="font-size:.8rem;"></div>
+        </div>
+      </div>
+
+      <div class="info-box" style="font-size:.75rem;margin-top:.5rem;">
+        📌 Analytics are stored in your GitHub Gist. Tracking begins when visitors have a GitHub token set in their browser (site owner visits). For broader tracking without a token requirement, consider integrating a third-party analytics service like Cloudflare Web Analytics (free).
       </div>
     </div>
 
@@ -471,9 +531,15 @@ async function doLogin(){
   const btn=document.getElementById('loginBtn');btn.innerHTML='Checking...<span class="spinner"></span>';btn.disabled=true;
 
   const enteredToken=(document.getElementById('loginToken').value||'').trim();
+  // Always try to save token if entered; also get gistId from site-config.json if not in localStorage
   if(enteredToken){
     const gId=await getGistId();
-    if(gId)saveLocalCfg({gistId:gId,token:enteredToken});
+    if(gId){saveLocalCfg({gistId:gId,token:enteredToken});}
+    else{
+      // gistId not found anywhere yet – store token temporarily; it will merge after fetchGist resolves gistId
+      const existing=getLocalCfg();
+      saveLocalCfg(Object.assign({},existing,{token:enteredToken}));
+    }
   }
 
   const data=await fetchGist();
@@ -484,12 +550,36 @@ async function doLogin(){
   if(!admin){err(errEl,'Invalid username or password.');document.getElementById('loginPassword').value='';btn.textContent='Login';btn.disabled=false;return;}
 
   saveSession({id:admin.id,username:admin.username,isSuperAdmin:!!admin.isSuperAdmin});
+  // Show token badge
+  const tSaved=document.getElementById('tokenSavedBadge');
+  const tReq=document.getElementById('tokenRequiredBadge');
+  if(tSaved)tSaved.style.display=getToken()?'':'none';
   await showDashboard();
   btn.textContent='Login';btn.disabled=false;
 }
 document.getElementById('loginPassword').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
 document.getElementById('loginUsername').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
+
+// Show token status badge on page load
+(function checkTokenBadge(){
+  const saved=getToken();
+  const savedBadge=document.getElementById('tokenSavedBadge');
+  const reqBadge=document.getElementById('tokenRequiredBadge');
+  if(saved&&savedBadge)savedBadge.style.display='';
+})();
 function doLogout(){clearSession();location.reload();}
+
+async function saveInlineToken(){
+  const t=(document.getElementById('inlineToken').value||'').trim();
+  if(!t){showToast('Enter your GitHub token first.','error');return;}
+  const gId=await getGistId();
+  if(!gId){showToast('Cannot find Gist ID.','error');return;}
+  saveLocalCfg({gistId:gId,token:t});
+  const banner=document.getElementById('tokenBanner');
+  if(banner)banner.remove();
+  setSyncStatus('ok','● Synced');
+  showToast('Token saved! You can now write data.','success');
+}
 
 // ══════ DASHBOARD ══════
 async function showDashboard(){
@@ -497,7 +587,21 @@ async function showDashboard(){
   document.getElementById('loggedAsLabel').textContent='👤 '+ME.username+(ME.isSuperAdmin?' (Super Admin)':'');
   document.getElementById('newUsername').value=ME.username;
   if(!ME.isSuperAdmin)document.getElementById('tab-admins').style.display='none';
-  if(!getToken())setSyncStatus('err','⚠ Read-only – enter token to write');
+  if(!getToken()){
+    setSyncStatus('err','⚠ No write token');
+    // Show inline token entry banner
+    if(!document.getElementById('tokenBanner')){
+      const banner=document.createElement('div');
+      banner.id='tokenBanner';
+      banner.style.cssText='background:rgba(255,0,0,.08);border-bottom:1px solid var(--cr-red);padding:.6rem 1.5rem;display:flex;align-items:center;gap:.75rem;flex-wrap:wrap;font-size:.8rem;';
+      banner.innerHTML=\`<span style="color:#ff4444;font-weight:700;">⚠ No GitHub token found.</span>
+        <span style="color:var(--cr-muted);">You cannot save until you enter your token.</span>
+        <input type="password" id="inlineToken" placeholder="ghp_xxxxxxxxxxxx" style="background:#1a1a1a;border:1px solid var(--cr-border);color:var(--cr-text);border-radius:6px;padding:5px 10px;font-size:.8rem;flex:1;min-width:200px;max-width:300px;font-family:'Exo 2',sans-serif;" />
+        <button onclick="saveInlineToken()" style="background:var(--cr-red);color:#fff;border:none;padding:6px 14px;border-radius:6px;cursor:pointer;font-size:.8rem;font-weight:700;font-family:'Exo 2',sans-serif;">Save Token</button>\`;
+      const header=document.querySelector('#adminDashboard>header');
+      if(header)header.insertAdjacentElement('afterend',banner);
+    }
+  }
   await syncFromGist(false);
 
   // Load saved shortcut
@@ -507,12 +611,13 @@ async function showDashboard(){
 
 // ══════ TABS ══════
 function switchTab(tab){
-  ['articles','ads','admins','settings'].forEach(t=>{
+  ['articles','ads','admins','stats','settings'].forEach(t=>{
     const p=document.getElementById('tab'+t[0].toUpperCase()+t.slice(1));if(p)p.style.display=t===tab?'block':'none';
     const b=document.getElementById('tab-'+t);if(b)b.classList.toggle('active',t===tab);
   });
   if(tab==='ads')renderAllAdLists();
   if(tab==='admins')renderAdminsList();
+  if(tab==='stats')renderStats();
 }
 
 // ══════ ARTICLES ══════
@@ -729,10 +834,9 @@ function captureHandler(e) {
   if (e.altKey) keys.push('alt');
   if (e.shiftKey) keys.push('shift');
   if (e.metaKey) keys.push('meta');
+  // Only save when a non‑modifier key is pressed
   if (e.key && !['Control','Alt','Shift','Meta'].includes(e.key)) {
     keys.push(e.key.toLowerCase());
-  }
-  if (keys.length) {
     const shortcut = keys.join('+');
     localStorage.setItem('cr_admin_shortcut', shortcut);
     document.getElementById('shortcutDisplay').value = formatShortcut(shortcut);
@@ -740,6 +844,7 @@ function captureHandler(e) {
     document.removeEventListener('keydown', captureHandler);
     showToast('Shortcut saved!', 'success');
   }
+  // If no main key yet, do nothing (wait for further keys)
 }
 function resetShortcut() {
   localStorage.setItem('cr_admin_shortcut', 'ctrl+alt+a');
@@ -768,7 +873,166 @@ function esc(s){if(!s)return'';return String(s).replace(/&/g,'&amp;').replace(/<
 function fmtDate(d){if(!d)return'';return new Date(d).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});}
 let _tt;
 function showToast(msg,type){const t=document.getElementById('toast');t.textContent=msg;t.className='toast show'+(type?' '+type:'');clearTimeout(_tt);_tt=setTimeout(()=>t.classList.remove('show'),3500);}
+
+// ══════ CHART.JS ══════
+(function loadChartJs(){
+  if(window.Chart)return;
+  const s=document.createElement('script');
+  s.src='https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js';
+  document.head.appendChild(s);
+})();
+
+// ══════ STATS ══════
+let _chartDaily=null,_chartHourly=null,_chartDevices=null,_chartSources=null;
+
+function destroyChart(c){if(c){try{c.destroy();}catch(e){}}return null;}
+
+function renderStats(){
+  if(!DB||!DB.analytics){
+    document.getElementById('statsKpis').innerHTML='<div style="color:var(--cr-muted);font-size:.85rem;grid-column:1/-1;padding:2rem;text-align:center;">No analytics data yet. Visit the site to start collecting data.</div>';
+    return;
+  }
+  const a=DB.analytics;
+  const days=parseInt(document.getElementById('statsDays')?.value||30);
+  const today=new Date();
+
+  // Build date range
+  const dateKeys=[];
+  for(let i=days-1;i>=0;i--){
+    const d=new Date(today);d.setDate(d.getDate()-i);
+    dateKeys.push(d.toISOString().slice(0,10));
+  }
+
+  // Aggregate for range
+  let rangeViews=0,rangeUnique=0;
+  const dailyViews=[],dailyUnique=[];
+  dateKeys.forEach(dk=>{
+    const day=a.daily&&a.daily[dk]||{views:0,unique:0};
+    rangeViews+=day.views||0;
+    rangeUnique+=day.unique||0;
+    dailyViews.push(day.views||0);
+    dailyUnique.push(day.unique||0);
+  });
+
+  const totalViews=a.totalViews||0;
+  const totalUnique=a.totalUnique||0;
+  const avgDaily=days>0?Math.round(rangeViews/days):0;
+  const devices=a.devices||{desktop:0,mobile:0,tablet:0};
+  const totalDevices=Object.values(devices).reduce((s,v)=>s+v,0)||1;
+
+  // ── KPI Cards ──
+  const kpis=[
+    {label:'Total Views',val:totalViews,icon:'👁',color:'#ff0000'},
+    {label:'Unique Visitors',val:totalUnique,icon:'👤',color:'#ff6600'},
+    {label:`Views (${days}d)`,val:rangeViews,icon:'📈',color:'#ff3333'},
+    {label:`Unique (${days}d)`,val:rangeUnique,icon:'🆕',color:'#ff9900'},
+    {label:'Avg/Day',val:avgDaily,icon:'📅',color:'#cc0000'},
+    {label:'Articles',val:(DB.articles||[]).length,icon:'📰',color:'#888'},
+  ];
+  document.getElementById('statsKpis').innerHTML=kpis.map(k=>`
+    <div class="panel" style="text-align:center;padding:1rem;">
+      <div style="font-size:1.5rem;margin-bottom:.25rem;">${k.icon}</div>
+      <div style="font-family:'Orbitron',monospace;font-size:1.4rem;font-weight:900;color:${k.color};">${k.val.toLocaleString()}</div>
+      <div style="font-size:.7rem;color:var(--cr-muted);margin-top:.25rem;font-family:'Orbitron',monospace;letter-spacing:1px;">${k.label}</div>
+    </div>`).join('');
+
+  // ── Daily Chart ──
+  const shortLabels=dateKeys.map(d=>{const p=d.split('-');return p[2]+'/'+p[1];});
+  if(window.Chart){
+    _chartDaily=destroyChart(_chartDaily);
+    const ctx=document.getElementById('chartDaily');
+    if(ctx){
+      _chartDaily=new Chart(ctx,{
+        type:'bar',
+        data:{
+          labels:shortLabels,
+          datasets:[
+            {label:'Views',data:dailyViews,backgroundColor:'rgba(255,0,0,0.6)',borderColor:'#ff0000',borderWidth:1,borderRadius:3},
+            {label:'Unique',data:dailyUnique,backgroundColor:'rgba(255,102,0,0.5)',borderColor:'#ff6600',borderWidth:1,borderRadius:3}
+          ]
+        },
+        options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#888',font:{size:10}}}},scales:{x:{ticks:{color:'#666',font:{size:9},maxTicksLimit:10},grid:{color:'#1a1a1a'}},y:{ticks:{color:'#666',font:{size:10}},grid:{color:'#1a1a1a'},beginAtZero:true}}}
+      });
+    }
+
+    // ── Hourly Chart ──
+    _chartHourly=destroyChart(_chartHourly);
+    const hCtx=document.getElementById('chartHourly');
+    if(hCtx){
+      const hourly=a.hourly||Array(24).fill(0);
+      const hLabels=Array.from({length:24},(_,i)=>i+'h');
+      _chartHourly=new Chart(hCtx,{
+        type:'line',
+        data:{labels:hLabels,datasets:[{label:'Visits',data:hourly,borderColor:'#ff0000',backgroundColor:'rgba(255,0,0,0.1)',fill:true,tension:0.4,pointRadius:2,pointBackgroundColor:'#ff0000'}]},
+        options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#666',font:{size:9}},grid:{color:'#1a1a1a'}},y:{ticks:{color:'#666',font:{size:10}},grid:{color:'#1a1a1a'},beginAtZero:true}}}
+      });
+    }
+
+    // ── Devices Doughnut ──
+    _chartDevices=destroyChart(_chartDevices);
+    const dCtx=document.getElementById('chartDevices');
+    const devLabels=['Desktop','Mobile','Tablet'];
+    const devData=[devices.desktop||0,devices.mobile||0,devices.tablet||0];
+    if(dCtx){
+      _chartDevices=new Chart(dCtx,{
+        type:'doughnut',
+        data:{labels:devLabels,datasets:[{data:devData,backgroundColor:['#ff0000','#ff6600','#ff9900'],borderColor:'#111',borderWidth:2}]},
+        options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}}}
+      });
+    }
+    document.getElementById('deviceLegend').innerHTML=devLabels.map((l,i)=>{
+      const icons=['🖥','📱','📟'];const colors=['#ff0000','#ff6600','#ff9900'];
+      const pct=totalDevices>0?Math.round(devData[i]/totalDevices*100):0;
+      return`<div style="display:flex;justify-content:space-between;margin-bottom:4px;"><span style="color:${colors[i]}">${icons[i]} ${l}</span><span style="color:var(--cr-text);font-weight:700;">${pct}%</span></div>`;
+    }).join('');
+
+    // ── Sources Doughnut ──
+    _chartSources=destroyChart(_chartSources);
+    const sCtx=document.getElementById('chartSources');
+    const sources=a.sources||{};
+    const srcLabels=Object.keys(sources).filter(k=>sources[k]>0);
+    const srcData=srcLabels.map(k=>sources[k]);
+    const srcColors=['#ff0000','#ff4400','#ff6600','#ff8800','#ffaa00','#ffcc00'];
+    if(sCtx){
+      _chartSources=new Chart(sCtx,{
+        type:'doughnut',
+        data:{labels:srcLabels.map(l=>l.charAt(0).toUpperCase()+l.slice(1)),datasets:[{data:srcData,backgroundColor:srcColors,borderColor:'#111',borderWidth:2}]},
+        options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}}}
+      });
+    }
+    const totalSrc=srcData.reduce((s,v)=>s+v,0)||1;
+    document.getElementById('sourceLegend').innerHTML=srcLabels.map((l,i)=>{
+      const pct=Math.round(srcData[i]/totalSrc*100);
+      const icons={direct:'🔗',search:'🔍',youtube:'▶',twitter:'🐦',facebook:'👥',referral:'↩'};
+      return`<div style="display:flex;justify-content:space-between;margin-bottom:4px;"><span style="color:${srcColors[i]}">${icons[l]||'•'} ${l.charAt(0).toUpperCase()+l.slice(1)}</span><span style="color:var(--cr-text);font-weight:700;">${pct}%</span></div>`;
+    }).join('');
+  }
+
+  // ── Top Articles ──
+  const topArt=a.topArticles||{};
+  const articles=DB.articles||[];
+  const sorted=Object.entries(topArt).sort((a,b)=>b[1]-a[1]).slice(0,6);
+  const maxClicks=sorted.length>0?sorted[0][1]:1;
+  document.getElementById('topArticlesStats').innerHTML=sorted.length?sorted.map(([id,clicks])=>{
+    const art=articles.find(x=>x.id===id);
+    const title=art?art.title.slice(0,28)+(art.title.length>28?'…':''):'Unknown';
+    const pct=Math.round(clicks/maxClicks*100);
+    return`<div style="margin-bottom:.65rem;">
+      <div style="display:flex;justify-content:space-between;margin-bottom:3px;font-size:.75rem;">
+        <span style="color:var(--cr-text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:70%;">${esc(title)}</span>
+        <span style="color:var(--cr-red);font-weight:700;flex-shrink:0;">${clicks}</span>
+      </div>
+      <div style="background:var(--cr-border);border-radius:3px;height:4px;">
+        <div style="background:var(--cr-red);width:${pct}%;height:4px;border-radius:3px;transition:width .4s;"></div>
+      </div>
+    </div>`;
+  }).join(''):'<div style="color:var(--cr-muted);font-size:.8rem;padding:.5rem 0;">No clicks tracked yet.</div>';
+}
+
 ['articleModal','adModal','adminModal'].forEach(id=>{document.getElementById(id).addEventListener('click',e=>{if(e.target===document.getElementById(id))closeModal(id);});});
 </script>
 </body>
+
 </html>
+
+
