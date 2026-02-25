@@ -594,10 +594,10 @@ async function showDashboard(){
       const banner=document.createElement('div');
       banner.id='tokenBanner';
       banner.style.cssText='background:rgba(255,0,0,.08);border-bottom:1px solid var(--cr-red);padding:.6rem 1.5rem;display:flex;align-items:center;gap:.75rem;flex-wrap:wrap;font-size:.8rem;';
-      banner.innerHTML=\`<span style="color:#ff4444;font-weight:700;">⚠ No GitHub token found.</span>
+      banner.innerHTML=`<span style="color:#ff4444;font-weight:700;">⚠ No GitHub token found.</span>
         <span style="color:var(--cr-muted);">You cannot save until you enter your token.</span>
         <input type="password" id="inlineToken" placeholder="ghp_xxxxxxxxxxxx" style="background:#1a1a1a;border:1px solid var(--cr-border);color:var(--cr-text);border-radius:6px;padding:5px 10px;font-size:.8rem;flex:1;min-width:200px;max-width:300px;font-family:'Exo 2',sans-serif;" />
-        <button onclick="saveInlineToken()" style="background:var(--cr-red);color:#fff;border:none;padding:6px 14px;border-radius:6px;cursor:pointer;font-size:.8rem;font-weight:700;font-family:'Exo 2',sans-serif;">Save Token</button>\`;
+        <button onclick="saveInlineToken()" style="background:var(--cr-red);color:#fff;border:none;padding:6px 14px;border-radius:6px;cursor:pointer;font-size:.8rem;font-weight:700;font-family:'Exo 2',sans-serif;">Save Token</button>`;
       const header=document.querySelector('#adminDashboard>header');
       if(header)header.insertAdjacentElement('afterend',banner);
     }
